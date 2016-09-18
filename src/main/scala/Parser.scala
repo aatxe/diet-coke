@@ -13,6 +13,9 @@ class Parser extends RegexParsers with PackratParsers {
   lazy val id: P[String] =
     guard(not(reserved)) ~> """([a-zA-Z]|[^\u0000-\uFFFF])([a-zA-Z0-9]|[^\u0000-\uFFFF])*""".r
 
+  lazy val string: P[String] =
+    "\"" ~> """[^"]""".r <~ "\""
+
   lazy val boolean: P[Boolean] =
     "true" ^^ { _ => true }
     "false" ^^ { _ => false }
@@ -22,7 +25,8 @@ class Parser extends RegexParsers with PackratParsers {
 
   lazy val const: P[Const] =
     integer ^^ { CNum(_) } |
-    boolean ^^ { CBool(_) }
+    boolean ^^ { CBool(_) } |
+    string ^^ { CString(_) }
 
   lazy val atom: P[Expr] =
     id ^^ { EId(_) } |

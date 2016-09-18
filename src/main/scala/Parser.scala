@@ -33,10 +33,14 @@ class Parser extends RegexParsers with PackratParsers {
     const ^^ { EConst(_) } |
     "(" ~> expr <~ ")"
 
-  lazy val mulDiv: P[Expr] =
-    mulDiv ~ ("*" ~> atom) ^^ { case lhs ~ rhs => EOp2(OMul, lhs, rhs) } |
-    mulDiv ~ ("/" ~> atom) ^^ { case lhs ~ rhs => EOp2(ODiv, lhs, rhs) } |
+  lazy val app: P[Expr] =
+    atom ~ ("(" ~> expr <~ ")") ^^ { case fun ~ arg => EApp(fun, arg) } |
     atom
+
+  lazy val mulDiv: P[Expr] =
+    mulDiv ~ ("*" ~> app) ^^ { case lhs ~ rhs => EOp2(OMul, lhs, rhs) } |
+    mulDiv ~ ("/" ~> app) ^^ { case lhs ~ rhs => EOp2(ODiv, lhs, rhs) } |
+    app
 
   lazy val mod: P[Expr] =
     mod ~ ("%" ~> mulDiv) ^^ { case lhs ~ rhs => EOp2(OMod, lhs, rhs) } |
@@ -47,8 +51,12 @@ class Parser extends RegexParsers with PackratParsers {
     addSub ~ ("-" ~> mod) ^^ { case lhs ~ rhs => EOp2(OSub, lhs, rhs) } |
     mod
 
+  lazy val anonymousFun: P[Expr] =
+    id ~ ("=>" ~> expr) ^^ { case id ~ body => EFun(id, body) }
+
   // TODO see about replacing this with an explicit precendence table.
   lazy val expr: P[Expr] =
+    anonymousFun |
     addSub
 
   lazy val binding: P[Statement] =

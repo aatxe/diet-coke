@@ -34,7 +34,11 @@ class Parser extends RegexParsers with PackratParsers {
     "(" ~> expr <~ ")"
 
   lazy val app: P[Expr] =
-    atom ~ ("(" ~> expr <~ ")") ^^ { case fun ~ arg => EApp(fun, arg) } |
+    atom ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
+      case fun ~ args => args.tail.foldLeft[Expr](EApp(fun, args.head)) {
+        case (acc, arg) => EApp(acc, arg)
+      }
+    } |
     atom
 
   lazy val mulDiv: P[Expr] =

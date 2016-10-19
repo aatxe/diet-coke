@@ -37,8 +37,10 @@ object Main extends App {
 
         // Update the environment.
         env = Interpreter.getUpdatedEnv(prog)
+
         // Evaluate program in updated environment.
         val res = Interpreter.evalStatement(prog)
+
         println(res)
       }
     }) match {

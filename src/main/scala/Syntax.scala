@@ -1,6 +1,14 @@
 package coke
 
 object Syntax {
+  type Env = Map[String, Value]
+
+  sealed trait Value
+  case object VUnit extends Value
+  case class VConst(c: Const) extends Value
+  case class VClosure(id: String, body: Expr, env: Env) extends Value
+  case class VExpr(e: Expr) extends Value
+
   sealed trait Const
   case class CNum(n: Int) extends Const
   case class CBool(b: Boolean) extends Const
@@ -59,4 +67,5 @@ object Syntax {
 
   sealed trait Statement
   case class SBinding(id: String, body: Expr) extends Statement
+  case class SExpr(expr: Expr) extends Statement
 }

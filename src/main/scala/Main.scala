@@ -9,6 +9,7 @@ object Main extends App {
 
   var running = true
   var multiline = false
+  implicit var env: Syntax.Env = Map()
   while (running) {
     print(prompt)
 
@@ -33,8 +34,12 @@ object Main extends App {
         }
       } else {
         val prog = Parser.parse(input)
-        // TODO: evaluation and stuff
-        println(prog)
+
+        // Update the environment.
+        env = Interpreter.getUpdatedEnv(prog)
+        // Evaluate program in updated environment.
+        val res = Interpreter.evalStatement(prog)
+        println(res)
       }
     }) match {
       case Success(_) => ()

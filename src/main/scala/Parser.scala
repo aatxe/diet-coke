@@ -34,7 +34,7 @@ class Parser extends RegexParsers with PackratParsers {
     "(" ~> expr <~ ")"
 
   lazy val app: P[Expr] =
-    atom ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
+    app ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
       case fun ~ args => args.tail.foldLeft[Expr](EApp(fun, args.head)) {
         case (acc, arg) => EApp(acc, arg)
       }
@@ -66,8 +66,12 @@ class Parser extends RegexParsers with PackratParsers {
   lazy val binding: P[Statement] =
     ("let" ~> id <~ "=") ~ expr ^^ { case id ~ body => SBinding(id, body) }
 
+  lazy val exprStmt: P[Statement] =
+    expr ^^ { case expr => SExpr(expr) }
+
   lazy val stmt: P[Statement] =
-    binding
+    binding |
+    exprStmt
 
   def parseString[A](str: String, parser: P[A]): A =
     parseAll(parser, str) match {

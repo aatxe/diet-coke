@@ -65,10 +65,13 @@ class Parser extends RegexParsers with PackratParsers {
     numComparison ~ ("<=" ~> addSub) ^^ { case lhs ~ rhs => EOp2(OLte, lhs, rhs) } |
     addSub
 
-  lazy val boolOps: P[Expr] =
-    boolOps ~ ("&&" ~> numComparison) ^^ { case lhs ~ rhs => EOp2(OAnd, lhs, rhs) } |
-    boolOps ~ ("||" ~> numComparison) ^^ { case lhs ~ rhs => EOp2(OOr, lhs, rhs) }  |
+  lazy val and: P[Expr] =
+    and ~ ("&&" ~> numComparison) ^^ { case lhs ~ rhs => EOp2(OAnd, lhs, rhs) } |
     numComparison
+
+  lazy val or: P[Expr] =
+    or ~ ("||" ~> and) ^^ { case lhs ~ rhs => EOp2(OOr, lhs, rhs) } |
+    and
 
   lazy val anonymousFun: P[Expr] =
     id ~ ("=>" ~> expr) ^^ { case id ~ body => EFun(id, body) }
@@ -83,7 +86,7 @@ class Parser extends RegexParsers with PackratParsers {
   lazy val expr: P[Expr] =
     anonymousFun  |
     ifExpr        |
-    boolOps
+    or
 
   lazy val binding: P[Statement] =
     ("let" ~> id <~ "=") ~ expr ^^ { case id ~ body => SBinding(id, body) }

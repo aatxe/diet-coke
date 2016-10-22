@@ -25,11 +25,17 @@ object Interpreter {
   def getUpdatedEnv(stmt: Statement)(implicit env: Env): Env = stmt match {
     case SBinding(id, body) => env + (id -> VExpr(body))
     case SExpr(_) => env
+    case SBlock(stmts) => stmts.foldLeft(env) {
+      case (acc, stmt) => getUpdatedEnv(stmt)(acc)
+    }
   }
 
   def evalStatement(stmt: Statement)(implicit env: Env): Value = stmt match {
     case SBinding(_, _) => VUnit
     case SExpr(expr) => evalExpr(expr)
+    case SBlock(stmts) => stmts.foldLeft[(Value, Env)]((VUnit, env)) {
+      case ((_, envPrime), stmt) => (evalStatement(stmt), getUpdatedEnv(stmt)(envPrime))
+    }._1
   }
 
   def evalExpr(expr: Expr)(implicit env: Env): Value = expr match {

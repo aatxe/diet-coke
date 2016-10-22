@@ -189,4 +189,5 @@ object Syntax {
   sealed trait Statement
   case class SBinding(id: String, body: Expr) extends Statement
   case class SExpr(expr: Expr) extends Statement
+  case class SBlock(stmts: Seq[Statement]) extends Statement
 }

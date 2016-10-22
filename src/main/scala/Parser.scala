@@ -119,10 +119,16 @@ class Parser extends RegexParsers with PackratParsers {
   lazy val exprStmt: P[Statement] =
     expr ^^ { case expr => SExpr(expr) }
 
-  lazy val stmt: P[Statement] =
+  lazy val stmtAtom: P[Statement] =
     binding  |
     funcDecl |
     exprStmt
+
+  lazy val stmt: P[Statement] =
+    rep1sep(stmtAtom, ";") ^^ {
+      case List(stmt) => stmt
+      case stmts => SBlock(stmts)
+    }
 
   def parseString[A](str: String, parser: P[A]): A =
     parseAll(parser, str) match {

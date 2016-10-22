@@ -8,7 +8,7 @@ class Parser extends RegexParsers with PackratParsers {
   type P[A] = PackratParser[A]
 
   lazy val reserved: P[String] =
-    "fn" | "let" | "true" | "false"
+    "fn" | "let" | "true" | "false" | "if" | "then" | "else"
 
   lazy val id: P[String] =
     guard(not(reserved)) ~> """([a-zA-Z]|[^\u0000-\uFFFF])([a-zA-Z0-9]|[^\u0000-\uFFFF])*""".r
@@ -29,6 +29,7 @@ class Parser extends RegexParsers with PackratParsers {
     string ^^ { CString(_) }
 
   lazy val atom: P[Expr] =
+    "()" ^^ { _ => EUnit }      |
     id ^^ { EId(_) }       |
     const ^^ { EConst(_) } |
     "(" ~> expr <~ ")"
@@ -91,11 +92,20 @@ class Parser extends RegexParsers with PackratParsers {
   lazy val binding: P[Statement] =
     ("let" ~> id <~ "=") ~ expr ^^ { case id ~ body => SBinding(id, body) }
 
+  lazy val funcDecl: P[Statement] =
+    ("fn" ~> id) ~ ("(" ~> repsep(id, ",") <~ ")") ~ ("=" ~> expr) ^^ {
+      case id ~ Nil ~ body => SBinding(id, body)
+      case id ~ args ~ body => SBinding(id, args.foldRight(body) {
+        case (arg, acc) => EFun(arg, acc)
+      })
+    }
+
   lazy val exprStmt: P[Statement] =
     expr ^^ { case expr => SExpr(expr) }
 
   lazy val stmt: P[Statement] =
     binding  |
+    funcDecl |
     exprStmt
 
   def parseString[A](str: String, parser: P[A]): A =

@@ -56,6 +56,15 @@ class Parser extends RegexParsers with PackratParsers {
     addSub ~ ("-" ~> mod) ^^ { case lhs ~ rhs => EOp2(OSub, lhs, rhs) }    |
     mod
 
+  lazy val numComparison: P[Expr] =
+    numComparison ~ ("==" ~> addSub) ^^ { case lhs ~ rhs => EOp2(OEq, lhs, rhs) }  |
+    numComparison ~ ("/=" ~> addSub) ^^ { case lhs ~ rhs => EOp2(ONEq, lhs, rhs) } |
+    numComparison ~ (">" ~> addSub) ^^ { case lhs ~ rhs => EOp2(OGt, lhs, rhs) }   |
+    numComparison ~ ("<" ~> addSub) ^^ { case lhs ~ rhs => EOp2(OLt, lhs, rhs) }   |
+    numComparison ~ (">=" ~> addSub) ^^ { case lhs ~ rhs => EOp2(OGte, lhs, rhs) } |
+    numComparison ~ ("<=" ~> addSub) ^^ { case lhs ~ rhs => EOp2(OLte, lhs, rhs) } |
+    addSub
+
   lazy val anonymousFun: P[Expr] =
     id ~ ("=>" ~> expr) ^^ { case id ~ body => EFun(id, body) }
 
@@ -67,9 +76,9 @@ class Parser extends RegexParsers with PackratParsers {
 
   // TODO see about replacing this with an explicit precendence table.
   lazy val expr: P[Expr] =
-    anonymousFun |
-    ifExpr       |
-    addSub
+    anonymousFun  |
+    ifExpr        |
+    numComparison
 
   lazy val binding: P[Statement] =
     ("let" ~> id <~ "=") ~ expr ^^ { case id ~ body => SBinding(id, body) }

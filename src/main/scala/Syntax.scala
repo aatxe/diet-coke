@@ -18,6 +18,8 @@ object Syntax {
     def apply(lhs: Const, rhs: Const): Const
   }
 
+  // Binary operations on numbers yielding numbers.
+
   case object OAdd extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m + n)
@@ -57,6 +59,59 @@ object Syntax {
       case (CString(_), _) | (_, CString(_)) => throw Errors.InvalidArgument(OMod, "string", "num")
     }
   }
+
+  // Binary operations on numbers yielding booleans
+
+  case object OLt extends Op2 {
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
+      case (CNum(m), CNum(n)) => CBool(m < n)
+      case (CBool(_), _) | (_, CBool(_)) => throw Errors.InvalidArgument(OLt, "bool", "num")
+      case (CString(_), _) | (_, CString(_)) => throw Errors.InvalidArgument(OLt, "string", "num")
+    }
+  }
+
+
+  case object OLte extends Op2 {
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
+      case (CNum(m), CNum(n)) => CBool(m <= n)
+      case (CBool(_), _) | (_, CBool(_)) => throw Errors.InvalidArgument(OLte, "bool", "num")
+      case (CString(_), _) | (_, CString(_)) => throw Errors.InvalidArgument(OLte, "string", "num")
+    }
+  }
+
+  case object OGt extends Op2 {
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
+      case (CNum(m), CNum(n)) => CBool(m > n)
+      case (CBool(_), _) | (_, CBool(_)) => throw Errors.InvalidArgument(OGt, "bool", "num")
+      case (CString(_), _) | (_, CString(_)) => throw Errors.InvalidArgument(OGt, "string", "num")
+    }
+  }
+
+  case object OGte extends Op2 {
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
+      case (CNum(m), CNum(n)) => CBool(m >= n)
+      case (CBool(_), _) | (_, CBool(_)) => throw Errors.InvalidArgument(OGte, "bool", "num")
+      case (CString(_), _) | (_, CString(_)) => throw Errors.InvalidArgument(OGte, "string", "num")
+    }
+  }
+
+  case object OEq extends Op2 {
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
+      case (CNum(m), CNum(n)) => CBool(m == n)
+      case (CBool(_), _) | (_, CBool(_)) => throw Errors.InvalidArgument(OEq, "bool", "num")
+      case (CString(_), _) | (_, CString(_)) => throw Errors.InvalidArgument(OEq, "string", "num")
+    }
+  }
+
+  case object ONEq extends Op2 {
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
+      case (CNum(m), CNum(n)) => CBool(m != n)
+      case (CBool(_), _) | (_, CBool(_)) => throw Errors.InvalidArgument(ONEq, "bool", "num")
+      case (CString(_), _) | (_, CString(_)) => throw Errors.InvalidArgument(ONEq, "string", "num")
+    }
+  }
+
+  // Binary operations on strings yielding strings
 
   case object OConcat extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {

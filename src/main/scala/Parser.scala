@@ -29,7 +29,7 @@ class Parser extends RegexParsers with PackratParsers {
     string ^^ { CString(_) }
 
   lazy val atom: P[Expr] =
-    "()" ^^ { _ => EUnit }      |
+    "()" ^^ { _ => EUnit } |
     id ^^ { EId(_) }       |
     const ^^ { EConst(_) } |
     "(" ~> expr <~ ")"

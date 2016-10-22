@@ -14,22 +14,22 @@ class Parser extends RegexParsers with PackratParsers {
     guard(not(reserved)) ~> """([a-zA-Z]|[^\u0000-\uFFFF])([a-zA-Z0-9]|[^\u0000-\uFFFF])*""".r
 
   lazy val string: P[String] =
-    "\"" ~> """[^"]""".r <~ "\""
+    "\"" ~> """[^"]*""".r <~ "\""
 
   lazy val boolean: P[Boolean] =
-    "true" ^^ { _ => true }
+    "true" ^^ { _ => true }   |
     "false" ^^ { _ => false }
 
   lazy val integer: P[Int] =
     """[0-9]+""".r ^^ { n => Integer.parseInt(n) }
 
   lazy val const: P[Const] =
-    integer ^^ { CNum(_) } |
-    boolean ^^ { CBool(_) } |
+    integer ^^ { CNum(_) }   |
+    boolean ^^ { CBool(_) }  |
     string ^^ { CString(_) }
 
   lazy val atom: P[Expr] =
-    id ^^ { EId(_) } |
+    id ^^ { EId(_) }       |
     const ^^ { EConst(_) } |
     "(" ~> expr <~ ")"
 
@@ -51,8 +51,9 @@ class Parser extends RegexParsers with PackratParsers {
     mulDiv
 
   lazy val addSub: P[Expr] =
-    addSub ~ ("+" ~> mod) ^^ { case lhs ~ rhs => EOp2(OAdd, lhs, rhs) } |
-    addSub ~ ("-" ~> mod) ^^ { case lhs ~ rhs => EOp2(OSub, lhs, rhs) } |
+    addSub ~ ("^" ~> mod) ^^ { case lhs ~ rhs => EOp2(OConcat, lhs, rhs) } |
+    addSub ~ ("+" ~> mod) ^^ { case lhs ~ rhs => EOp2(OAdd, lhs, rhs) }    |
+    addSub ~ ("-" ~> mod) ^^ { case lhs ~ rhs => EOp2(OSub, lhs, rhs) }    |
     mod
 
   lazy val anonymousFun: P[Expr] =
@@ -70,7 +71,7 @@ class Parser extends RegexParsers with PackratParsers {
     expr ^^ { case expr => SExpr(expr) }
 
   lazy val stmt: P[Statement] =
-    binding |
+    binding  |
     exprStmt
 
   def parseString[A](str: String, parser: P[A]): A =

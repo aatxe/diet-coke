@@ -58,6 +58,14 @@ object Syntax {
     }
   }
 
+  case object OConcat extends Op2 {
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
+      case (CString(m), CString(n)) => CString(m + n)
+      case (CBool(_), _) | (_, CBool(_)) => throw Errors.InvalidArgument(OConcat, "bool", "string")
+      case (CNum(_), _) | (_, CNum(_)) => throw Errors.InvalidArgument(OConcat, "num", "string")
+    }
+  }
+
   sealed trait Expr
   case class EId(id: String) extends Expr
   case class EConst(c: Const) extends Expr

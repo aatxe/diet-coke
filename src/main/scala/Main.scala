@@ -4,7 +4,7 @@ import scala.io.StdIn
 import scala.util.{Try, Success, Failure}
 
 object Main extends App {
-  val prompt = "\u03bb"
+  val prompt = "\u03bb "
   val altPrompt = "| "
 
   var running = true

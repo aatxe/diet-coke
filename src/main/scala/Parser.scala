@@ -59,9 +59,16 @@ class Parser extends RegexParsers with PackratParsers {
   lazy val anonymousFun: P[Expr] =
     id ~ ("=>" ~> expr) ^^ { case id ~ body => EFun(id, body) }
 
+  lazy val ifExpr: P[Expr] =
+    ("if" ~> expr <~ "then") ~ expr ~ opt("else" ~> expr) ^^ {
+      case pred ~ tru ~ Some(fls) => EIf(pred, tru, fls)
+      case pred ~ tru ~ None => EIf(pred, tru, EUnit)
+    }
+
   // TODO see about replacing this with an explicit precendence table.
   lazy val expr: P[Expr] =
     anonymousFun |
+    ifExpr       |
     addSub
 
   lazy val binding: P[Statement] =

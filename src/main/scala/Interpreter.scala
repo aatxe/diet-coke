@@ -33,11 +33,13 @@ object Interpreter {
   }
 
   def evalExpr(expr: Expr)(implicit env: Env): Value = expr match {
+    case EUnit => VUnit
     case EId(id) => env.getOrElse(id, throw UnboundIdentifier(id))
     case EConst(c) => VConst(c)
     case EFun(id, body) => VClosure(id, body, env)
     case EOp2(op, lhs, rhs) => evalOp2(op, evalExpr(lhs), evalExpr(rhs))
     case EApp(fun, arg) => evalApp(evalExpr(fun), evalExpr(arg))
+    case EIf(pred, tru, fls) => evalIf(evalExpr(pred), tru, fls)
   }
 
   def evalOp2(op: Op2, lhs: Value, rhs: Value)(implicit env: Env): Value = (lhs, rhs) match {
@@ -50,6 +52,13 @@ object Interpreter {
   def evalApp(fun: Value, arg: Value)(implicit env: Env): Value = fun match {
     case VClosure(id, body, envLocal) => evalExpr(body)(envLocal + (id -> arg))
     case VExpr(fun) => evalApp(evalExpr(fun), arg)
+    case _ => ???
+  }
+
+  def evalIf(pred: Value, tru: Expr, fls: Expr)(implicit env: Env): Value = pred match {
+    case VConst(CBool(true)) => evalExpr(tru)
+    case VConst(CBool(false)) => evalExpr(fls)
+    case VExpr(pred) => evalIf(evalExpr(pred), tru, fls)
     case _ => ???
   }
 }

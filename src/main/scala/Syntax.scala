@@ -67,11 +67,13 @@ object Syntax {
   }
 
   sealed trait Expr
+  case object EUnit extends Expr
   case class EId(id: String) extends Expr
   case class EConst(c: Const) extends Expr
   case class EOp2(op2: Op2, lhs: Expr, rhs: Expr) extends Expr
   case class EFun(id: String, body: Expr) extends Expr
   case class EApp(fun: Expr, arg: Expr) extends Expr
+  case class EIf(pred: Expr, tru: Expr, fls: Expr) extends Expr
 
   sealed trait Statement
   case class SBinding(id: String, body: Expr) extends Statement

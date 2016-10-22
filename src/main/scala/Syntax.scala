@@ -139,6 +139,42 @@ object Syntax {
     }
   }
 
+  // Built-in functions
+
+  sealed trait BuiltIn {
+    def apply(args: Seq[Value]): Value
+  }
+
+  case object BShow extends BuiltIn {
+    override def apply(args: Seq[Value]): Value = args match {
+      case Seq(value) => VConst(CString(value.toString))
+      case _ => throw Errors.ArityMismatch(BShow, args.length, 1)
+    }
+  }
+
+  case object BPrint extends BuiltIn {
+    override def apply(args: Seq[Value]): Value = args match {
+      case Seq(VConst(CString(str))) => print(str); VUnit
+      case Seq(VClosure(_, _, _)) => throw Errors.InvalidBuiltInArgument(BPrint, "function", "string")
+      case Seq(VConst(CBool(_))) => throw Errors.InvalidBuiltInArgument(BPrint, "bool", "string")
+      case Seq(VConst(CNum(_))) => throw Errors.InvalidBuiltInArgument(BPrint, "num", "string")
+      case Seq(VUnit) => throw Errors.InvalidBuiltInArgument(BPrint, "()", "string")
+      case Seq(VExpr(_)) => throw Errors.InvalidBuiltInArgument(BPrint, "expression", "string")
+      case _ => throw Errors.ArityMismatch(BPrint, args.length, 1)
+    }
+  }
+
+  case object BPrintln extends BuiltIn {
+    override def apply(args: Seq[Value]): Value = args match {
+      case Seq(VConst(CString(str))) => println(str); VUnit
+      case Seq(VClosure(_, _, _)) => throw Errors.InvalidBuiltInArgument(BPrint, "function", "string")
+      case Seq(VConst(CBool(_))) => throw Errors.InvalidBuiltInArgument(BPrint, "bool", "string")
+      case Seq(VConst(CNum(_))) => throw Errors.InvalidBuiltInArgument(BPrint, "num", "string")
+      case Seq(VUnit) => throw Errors.InvalidBuiltInArgument(BPrint, "()", "string")
+      case Seq(VExpr(_)) => throw Errors.InvalidBuiltInArgument(BPrint, "expression", "string")
+      case _ => throw Errors.ArityMismatch(BPrint, args.length, 1)
+    }
+  }
 
   sealed trait Expr
   case object EUnit extends Expr
@@ -147,6 +183,7 @@ object Syntax {
   case class EOp2(op2: Op2, lhs: Expr, rhs: Expr) extends Expr
   case class EFun(id: String, body: Expr) extends Expr
   case class EApp(fun: Expr, arg: Expr) extends Expr
+  case class EBuiltIn(builtIn: BuiltIn, args: Seq[Expr]) extends Expr
   case class EIf(pred: Expr, tru: Expr, fls: Expr) extends Expr
 
   sealed trait Statement

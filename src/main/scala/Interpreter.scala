@@ -39,6 +39,7 @@ object Interpreter {
     case EFun(id, body) => VClosure(id, body, env)
     case EOp2(op, lhs, rhs) => evalOp2(op, evalExpr(lhs), evalExpr(rhs))
     case EApp(fun, arg) => evalApp(evalExpr(fun), evalExpr(arg))
+    case EBuiltIn(builtIn, args) => evalBuiltIn(builtIn, args.map(evalExpr(_)))
     case EIf(pred, tru, fls) => evalIf(evalExpr(pred), tru, fls)
   }
 
@@ -53,6 +54,13 @@ object Interpreter {
     case VClosure(id, body, envLocal) => evalExpr(body)(envLocal + (id -> arg))
     case VExpr(fun) => evalApp(evalExpr(fun), arg)
     case _ => ???
+  }
+
+  def evalBuiltIn(builtIn: BuiltIn, args: Seq[Value])(implicit env: Env): Value = {
+    builtIn(args.map {
+      case VExpr(expr) => evalExpr(expr)
+      case value => value
+    })
   }
 
   def evalIf(pred: Value, tru: Expr, fls: Expr)(implicit env: Env): Value = pred match {

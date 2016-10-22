@@ -8,6 +8,14 @@ object Errors {
     s"Invalid use of operator $op. Expected: $expected, found: $found."
   )
 
+  case class InvalidBuiltInArgument(builtIn: BuiltIn, found: String, expected: String) extends RuntimeException(
+    s"Invalid use of $builtIn. Expected: $expected, found: $found."
+  )
+
+  case class ArityMismatch(builtIn: BuiltIn, found: Int, expected: Int) extends RuntimeException(
+    s"Encountered an arity mismatch for $builtIn. Expected $expected arguments, found $found."
+  )
+
   case class UnboundIdentifier(id: String) extends RuntimeException(
     s"Found unbound identifier: $id."
   )

@@ -121,6 +121,25 @@ object Syntax {
     }
   }
 
+  // Binary operations on booleans yielding booleans
+
+  case object OAnd extends Op2 {
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
+      case (CBool(m), CBool(n)) => CBool(m && n)
+      case (CString(_), _) | (_, CString(_)) => throw Errors.InvalidArgument(OAnd, "string", "bool")
+      case (CNum(_), _) | (_, CNum(_)) => throw Errors.InvalidArgument(OAnd, "num", "bool")
+    }
+  }
+
+  case object OOr extends Op2 {
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
+      case (CBool(m), CBool(n)) => CBool(m || n)
+      case (CString(_), _) | (_, CString(_)) => throw Errors.InvalidArgument(OAnd, "string", "bool")
+      case (CNum(_), _) | (_, CNum(_)) => throw Errors.InvalidArgument(OAnd, "num", "bool")
+    }
+  }
+
+
   sealed trait Expr
   case object EUnit extends Expr
   case class EId(id: String) extends Expr

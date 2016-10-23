@@ -185,7 +185,7 @@ object Syntax {
 
   case object BShow extends BuiltIn {
     override def apply(args: Seq[Value]): Value = args match {
-      case Seq(value) => VConst(CString(value.toString))
+      case Seq(value) => VConst(CString(value.pretty))
       case _ => throw Errors.ArityMismatch(BShow, args.length, 1)
     }
   }

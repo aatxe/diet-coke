@@ -57,7 +57,8 @@ class Parser extends RegexParsers with PackratParsers {
     }
 
   lazy val app: P[Expr] =
-    app ~ ("(" ~> rep1sep(expr, ",") <~ ")") ^^ {
+    app ~ ("(" ~> repsep(expr, ",") <~ ")") ^^ {
+      case fun ~ Nil => EApp(fun, EUnit)
       case fun ~ args => args.tail.foldLeft[Expr](EApp(fun, args.head)) {
         case (acc, arg) => EApp(acc, arg)
       }

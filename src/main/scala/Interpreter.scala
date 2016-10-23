@@ -71,6 +71,7 @@ object Interpreter {
 
   def evalApp(fun: Value, arg: Value)(implicit env: Env): Value = fun match {
     case VClosure(id, body, envLocal) => evalExpr(body)(envLocal + (id -> arg))
+    case VThunk(body, envLocal) => body.foldLeft[Value](VUnit) { case (_, expr) => evalExpr(expr)(envLocal) }
     case VExpr(fun) => evalApp(evalExpr(fun), arg)
     case _ => ???
   }

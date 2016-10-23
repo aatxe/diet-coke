@@ -9,6 +9,7 @@ object Main extends App {
 
   var running = true
   var multiline = false
+  var resNum = 0
   implicit var env: Syntax.Env = Map()
   while (running) {
     print(prompt)
@@ -41,7 +42,11 @@ object Main extends App {
         // Evaluate program in updated environment.
         val res = Interpreter.evalStatement(prog)
 
-        println(res)
+        if (res != Syntax.VUnit) {
+          println(s"let res$resNum = $res")
+          env = env + (s"res$resNum" -> res)
+          resNum += 1
+        }
       }
     }) match {
       case Success(_) => ()

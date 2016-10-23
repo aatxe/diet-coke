@@ -40,6 +40,7 @@ object Interpreter {
 
   def evalExpr(expr: Expr)(implicit env: Env): Value = expr match {
     case EUnit => VUnit
+    case EError(msg) => throw LanguageException(msg, 0)
     case EId(id) => env.getOrElse(id, throw UnboundIdentifier(id))
     case EConst(c) => VConst(c)
     case EFun(id, body) => VClosure(id, body, env)
@@ -47,6 +48,7 @@ object Interpreter {
     case EApp(fun, arg) => evalApp(evalExpr(fun), evalExpr(arg))
     case EBuiltIn(builtIn, args) => evalBuiltIn(builtIn, args.map(evalExpr(_)))
     case EIf(pred, tru, fls) => evalIf(evalExpr(pred), tru, fls)
+    case EBlock(exprs) => VThunk(exprs, env)
   }
 
   def evalOp2(op: Op2, lhs: Value, rhs: Value)(implicit env: Env): Value = (lhs, rhs) match {
@@ -54,6 +56,10 @@ object Interpreter {
     case (VExpr(lhs), rhs) => evalOp2(op, evalExpr(lhs), rhs)
     case (lhs, VExpr(rhs)) => evalOp2(op, lhs, evalExpr(rhs))
     case _ => ???
+  }
+
+  def evalThunk(thunk: VThunk): Value = thunk.body.foldLeft[Value](VUnit) {
+    case (_, expr) => evalExpr(expr)(thunk.env)
   }
 
   def evalApp(fun: Value, arg: Value)(implicit env: Env): Value = fun match {

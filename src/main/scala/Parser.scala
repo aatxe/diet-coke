@@ -8,10 +8,10 @@ class Parser extends RegexParsers with PackratParsers {
   type P[A] = PackratParser[A]
 
   lazy val reserved: P[String] =
-    "fn" | "let" | "true" | "false" | "if" | "then" | "else" | builtIns
+    "fn" | "let" | "true" | "false" | "if" | "then" | "else" | "error" | builtIns
 
   lazy val builtIns: P[String] =
-    "show" | "println" | "print"
+    "show" | "println" | "print" | "catch" | "inject"
 
   lazy val id: P[String] =
     guard(not(reserved)) ~> """([a-zA-Z]|[^\u0000-\uFFFF])([a-zA-Z0-9]|[^\u0000-\uFFFF])*""".r
@@ -36,13 +36,19 @@ class Parser extends RegexParsers with PackratParsers {
     id ^^ { EId(_) }       |
     const ^^ { EConst(_) } |
     builtInApp             |
+    error                  |
     "(" ~> expr <~ ")"
+
+  lazy val error: P[Expr] =
+    "error" ~> string ^^ { msg => EError(msg) }
 
   lazy val builtIn: P[BuiltIn] =
     builtIns ^^ {
       case "show" => BShow
       case "print" => BPrint
       case "println" => BPrintln
+      case "catch" => BCatch
+      case "inject" => BInject
     }
 
   lazy val builtInApp: P[Expr] =
@@ -93,6 +99,9 @@ class Parser extends RegexParsers with PackratParsers {
   lazy val anonymousFun: P[Expr] =
     id ~ ("=>" ~> expr) ^^ { case id ~ body => EFun(id, body) }
 
+  lazy val thunk: P[Expr] =
+    "{" ~> rep1sep(expr, ";") <~ "}" ^^ { exprs => EBlock(exprs) }
+
   lazy val ifExpr: P[Expr] =
     ("if" ~> expr <~ "then") ~ expr ~ opt("else" ~> expr) ^^ {
       case pred ~ tru ~ Some(fls) => EIf(pred, tru, fls)
@@ -102,6 +111,7 @@ class Parser extends RegexParsers with PackratParsers {
   // TODO see about replacing this with an explicit precendence table.
   lazy val expr: P[Expr] =
     anonymousFun  |
+    thunk         |
     ifExpr        |
     or
 

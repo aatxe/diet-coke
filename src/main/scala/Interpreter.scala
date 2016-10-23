@@ -44,11 +44,18 @@ object Interpreter {
     case EId(id) => env.getOrElse(id, throw UnboundIdentifier(id))
     case EConst(c) => VConst(c)
     case EFun(id, body) => VClosure(id, body, env)
+    case EOp1(op, arg) => evalOp1(op, evalExpr(arg))
     case EOp2(op, lhs, rhs) => evalOp2(op, evalExpr(lhs), evalExpr(rhs))
     case EApp(fun, arg) => evalApp(evalExpr(fun), evalExpr(arg))
     case EBuiltIn(builtIn, args) => evalBuiltIn(builtIn, args.map(evalExpr(_)))
     case EIf(pred, tru, fls) => evalIf(evalExpr(pred), tru, fls)
     case EBlock(exprs) => VThunk(exprs, env)
+  }
+
+  def evalOp1(op: Op1, arg: Value)(implicit env: Env): Value = arg match {
+    case VConst(arg) => VConst(op(arg))
+    case VExpr(expr) => evalOp1(op, evalExpr(expr))
+    case _ => ???
   }
 
   def evalOp2(op: Op2, lhs: Value, rhs: Value)(implicit env: Env): Value = (lhs, rhs) match {

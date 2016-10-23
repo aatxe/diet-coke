@@ -4,7 +4,7 @@ import Syntax._
 
 object Errors {
   // TODO: change this to eventually take types, not strings.
-  case class InvalidOp2Argument(op: Op2, found: String, expected: String) extends RuntimeException(
+  case class InvalidOpArgument(op: Op, found: String, expected: String) extends RuntimeException(
     s"Invalid use of operator $op. Expected: $expected, found: $found."
   )
 

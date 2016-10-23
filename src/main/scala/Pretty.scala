@@ -22,12 +22,18 @@ object Pretty {
     case EError(msg) => "error \"" + msg + "\""
     case EId(id) => id
     case EConst(c) => prettyConst(c)
+    case EOp1(op, expr) => s"(${prettyOp1(op)}${prettyExpr(expr)})"
     case EOp2(op, lhs, rhs) => s"(${prettyExpr(lhs)} ${prettyOp2(op)} ${prettyExpr(rhs)})"
     case EFun(id, body) => s"($id => ${prettyExpr(body)})"
     case EApp(fun, arg) => s"$fun($arg)"
     case EBuiltIn(builtIn, args) => ???
     case EIf(pred, tru, fls) => s"if $pred then $tru else $fls"
     case EBlock(exprs) => "{ " + exprs.tail.foldLeft(prettyExpr(exprs.head))((acc, expr) => s"$acc; ${prettyExpr(expr)}") + " }"
+  }
+
+  def prettyOp1(op1: Op1): String = op1 match {
+    case ONot => "!"
+    case ONeg => "-"
   }
 
   def prettyOp2(op2: Op2): String = op2 match {

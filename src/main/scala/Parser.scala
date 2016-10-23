@@ -64,10 +64,15 @@ class Parser extends RegexParsers with PackratParsers {
     } |
     atom
 
-  lazy val mulDiv: P[Expr] =
-    mulDiv ~ ("*" ~> app) ^^ { case lhs ~ rhs => EOp2(OMul, lhs, rhs) } |
-    mulDiv ~ ("/" ~> app) ^^ { case lhs ~ rhs => EOp2(ODiv, lhs, rhs) } |
+  lazy val negNot: P[Expr] =
+    "!" ~> negNot ^^ { arg => EOp1(ONot, arg) } |
+    "-" ~> negNot ^^ { arg => EOp1(ONeg, arg) } |
     app
+
+  lazy val mulDiv: P[Expr] =
+    mulDiv ~ ("*" ~> negNot) ^^ { case lhs ~ rhs => EOp2(OMul, lhs, rhs) } |
+    mulDiv ~ ("/" ~> negNot) ^^ { case lhs ~ rhs => EOp2(ODiv, lhs, rhs) } |
+    negNot
 
   lazy val mod: P[Expr] =
     mod ~ ("%" ~> mulDiv) ^^ { case lhs ~ rhs => EOp2(OMod, lhs, rhs) } |

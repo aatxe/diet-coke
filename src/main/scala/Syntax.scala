@@ -51,10 +51,36 @@ object Syntax {
     def typeString: String = "string"
   }
 
-  sealed trait Op2 {
+  sealed trait Op {
+    val pretty: String
+  }
+
+  // Unary operations
+
+  sealed trait Op1 extends Op {
+    def apply(arg: Const): Const
+
+    override lazy val pretty: String = Pretty.prettyOp1(this)
+  }
+
+  case object ONot extends Op1 {
+    override def apply(arg: Const): Const = arg match {
+      case CBool(b) => CBool(!b)
+      case bad => throw Errors.InvalidOpArgument(ONot, bad.typeString, "bool")
+    }
+  }
+
+  case object ONeg extends Op1 {
+    override def apply(arg: Const): Const = arg match {
+      case CNum(n) => CNum(-n)
+      case bad => throw Errors.InvalidOpArgument(ONeg, bad.typeString, "num")
+    }
+  }
+
+  sealed trait Op2 extends Op {
     def apply(lhs: Const, rhs: Const): Const
 
-    lazy val pretty: String = Pretty.prettyOp2(this)
+    override lazy val pretty: String = Pretty.prettyOp2(this)
   }
 
   // Binary operations on numbers yielding numbers.
@@ -62,40 +88,40 @@ object Syntax {
   case object OAdd extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m + n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(OAdd, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OAdd, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(OAdd, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(OAdd, bad.typeString, "num")
     }
   }
 
   case object OSub extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m - n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(OSub, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OSub, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(OSub, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(OSub, bad.typeString, "num")
     }
   }
 
   case object OMul extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match { 
       case (CNum(m), CNum(n)) => CNum(m * n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(OMul, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OMul, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(OMul, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(OMul, bad.typeString, "num")
     }
   }
 
   case object ODiv extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m / n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(ODiv, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(ODiv, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(ODiv, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(ODiv, bad.typeString, "num")
     }
   }
 
   case object OMod extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m % n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(OMod, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OMod, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(OMod, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(OMod, bad.typeString, "num")
     }
   }
 
@@ -104,48 +130,48 @@ object Syntax {
   case object OLt extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m < n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(OLt, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OLt, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(OLt, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(OLt, bad.typeString, "num")
     }
   }
 
   case object OLte extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m <= n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(OLte, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OLte, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(OLte, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(OLte, bad.typeString, "num")
     }
   }
 
   case object OGt extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m > n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(OGt, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OGt, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(OGt, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(OGt, bad.typeString, "num")
     }
   }
 
   case object OGte extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m >= n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(OGte, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OGte, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(OGte, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(OGte, bad.typeString, "num")
     }
   }
 
   case object OEq extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m == n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(OEq, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OEq, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(OEq, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(OEq, bad.typeString, "num")
     }
   }
 
   case object ONEq extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m != n)
-      case (CNum(_), bad) => throw Errors.InvalidOp2Argument(ONEq, bad.typeString, "num")
-      case (bad, _) => throw Errors.InvalidOp2Argument(ONEq, bad.typeString, "num")
+      case (CNum(_), bad) => throw Errors.InvalidOpArgument(ONEq, bad.typeString, "num")
+      case (bad, _) => throw Errors.InvalidOpArgument(ONEq, bad.typeString, "num")
     }
   }
 
@@ -154,8 +180,8 @@ object Syntax {
   case object OConcat extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CString(m), CString(n)) => CString(m + n)
-      case (CString(_), bad) => throw Errors.InvalidOp2Argument(OConcat, bad.typeString, "string")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OConcat, bad.typeString, "string")
+      case (CString(_), bad) => throw Errors.InvalidOpArgument(OConcat, bad.typeString, "string")
+      case (bad, _) => throw Errors.InvalidOpArgument(OConcat, bad.typeString, "string")
     }
   }
 
@@ -164,16 +190,16 @@ object Syntax {
   case object OAnd extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CBool(m), CBool(n)) => CBool(m && n)
-      case (CBool(_), bad) => throw Errors.InvalidOp2Argument(OAnd, bad.typeString, "bool")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OAnd, bad.typeString, "bool")
+      case (CBool(_), bad) => throw Errors.InvalidOpArgument(OAnd, bad.typeString, "bool")
+      case (bad, _) => throw Errors.InvalidOpArgument(OAnd, bad.typeString, "bool")
     }
   }
 
   case object OOr extends Op2 {
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CBool(m), CBool(n)) => CBool(m || n)
-      case (CBool(_), bad) => throw Errors.InvalidOp2Argument(OOr, bad.typeString, "bool")
-      case (bad, _) => throw Errors.InvalidOp2Argument(OOr, bad.typeString, "bool")
+      case (CBool(_), bad) => throw Errors.InvalidOpArgument(OOr, bad.typeString, "bool")
+      case (bad, _) => throw Errors.InvalidOpArgument(OOr, bad.typeString, "bool")
     }
   }
 
@@ -240,6 +266,7 @@ object Syntax {
   case class EError(msg: String) extends Expr
   case class EId(id: String) extends Expr
   case class EConst(c: Const) extends Expr
+  case class EOp1(op1: Op1, expr: Expr) extends Expr
   case class EOp2(op2: Op2, lhs: Expr, rhs: Expr) extends Expr
   case class EFun(id: String, body: Expr) extends Expr
   case class EApp(fun: Expr, arg: Expr) extends Expr

@@ -43,7 +43,7 @@ object Main extends App {
         val res = Interpreter.evalStatement(prog)
 
         if (res != Syntax.VUnit) {
-          println(s"let res$resNum = $res")
+          println(s"let res$resNum = ${res.pretty}")
           env = env + (s"res$resNum" -> res)
           resNum += 1
         }

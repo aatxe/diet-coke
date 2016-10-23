@@ -9,6 +9,8 @@ object Syntax {
 
   sealed trait Value {
     def typeString: String
+
+    lazy val pretty: String = Pretty.prettyValue(this)
   }
 
   case object VUnit extends Value {
@@ -33,6 +35,8 @@ object Syntax {
 
   sealed trait Const {
     def typeString: String
+
+    lazy val pretty: String = Pretty.prettyConst(this)
   }
 
   case class CNum(n: Int) extends Const {
@@ -49,6 +53,8 @@ object Syntax {
 
   sealed trait Op2 {
     def apply(lhs: Const, rhs: Const): Const
+
+    lazy val pretty: String = Pretty.prettyOp2(this)
   }
 
   // Binary operations on numbers yielding numbers.
@@ -226,7 +232,10 @@ object Syntax {
     }
   }
 
-  sealed trait Expr
+  sealed trait Expr {
+    lazy val pretty: String = Pretty.prettyExpr(this)
+  }
+
   case object EUnit extends Expr
   case class EError(msg: String) extends Expr
   case class EId(id: String) extends Expr

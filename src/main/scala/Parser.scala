@@ -31,12 +31,30 @@ class Parser extends RegexParsers with PackratParsers {
     boolean ^^ { CBool(_) }  |
     string ^^ { CString(_) }
 
+  lazy val typAtom: P[Type] =
+    "()" ^^ { _ => TUnit }       |
+    "num" ^^ { _ => TNum }       |
+    "bool" ^^ { _ => TBool }     |
+    "string" ^^ { _ => TString } |
+    id ^^ { id => TId(id) }
+
+  lazy val typFun: P[Type] =
+    typAtom ~ ("->" ~> typFun) ^^ { case lhs ~ rhs => TFun(lhs, rhs) } |
+    typAtom
+
+  lazy val typ: P[Type] =
+    typFun
+
+  lazy val typedExpr: P[Expr] =
+    expr ~ ("::" ~> typ) ^^ { case expr ~ typ => expr.setType(typ) }
+
   lazy val atom: P[Expr] =
-    "()" ^^ { _ => EUnit } |
-    id ^^ { EId(_) }       |
-    const ^^ { EConst(_) } |
-    builtInApp             |
-    error                  |
+    "()" ^^ { _ => EUnit }  |
+    id ^^ { EId(_) }        |
+    const ^^ { EConst(_) }  |
+    builtInApp              |
+    error                   |
+    "(" ~> typedExpr <~ ")" |
     "(" ~> expr <~ ")"
 
   lazy val error: P[Expr] =

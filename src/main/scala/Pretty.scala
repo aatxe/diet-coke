@@ -3,6 +3,16 @@ package coke
 import Syntax._
 
 object Pretty {
+  def prettyType(typ: Type): String = typ match {
+    case TUnit => "()"
+    case TNum => "num"
+    case TString => "string"
+    case TBool => "bool"
+    case TMetavar(id) => s"meta$id"
+    case TId(id) => id
+    case TFun(x, y) => s"(${prettyType(x)} -> ${prettyType(y)})"
+  }
+
   def prettyValue(value: Value): String = value match {
     case VUnit => "()"
     case VConst(c) => prettyConst(c)

@@ -40,12 +40,15 @@ object Main extends App {
         env = Interpreter.getUpdatedEnv(prog)
 
         // Evaluate program in updated environment.
-        val res = Interpreter.evalStatement(prog)
-
-        if (res != Syntax.VUnit) {
-          println(s"let res$resNum = ${res.pretty}")
-          env = env + (s"res$resNum" -> res)
-          resNum += 1
+        try {
+          val res = Interpreter.evalStatement(prog)
+          if (res != Syntax.VUnit) {
+            println(s"let res$resNum = ${res.pretty}")
+            env = env + (s"res$resNum" -> res)
+            resNum += 1
+          }
+        } catch {
+          case _: StackOverflowError => throw Errors.StackOverflow
         }
       }
     }) match {

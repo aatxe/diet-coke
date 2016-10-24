@@ -26,6 +26,7 @@ object Errors {
     s"Invalid REPL command: $cmd"
   )
 
+  case object StackOverflow extends RuntimeException(s"Execution overflowed the call stack.")
   case object MissingMain extends RuntimeException(s"No main function found.")
   case object Unreachable extends RuntimeException(s"This point should be unreachable!")
 }

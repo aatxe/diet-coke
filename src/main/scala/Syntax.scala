@@ -17,6 +17,12 @@ object Syntax {
     }
 
     lazy val pretty: String = Pretty.prettyValue(this)
+
+    var typ: Type = TMetavar()
+    def setType(typ: Type): Value = {
+      this.typ = typ
+      this
+    }
   }
 
   case object VUnit extends Value
@@ -296,8 +302,17 @@ object Syntax {
 
   // Types
 
+  type TEnv = Map[String, Type]
+  def emptyTypeEnv(): TEnv = Map()
+
   sealed trait Type {
     lazy val pretty: String = Pretty.prettyType(this)
+
+    def contains(metavar: Int): Boolean = this match {
+      case TUnit | TNum | TString | TBool | TId(_) => false
+      case TMetavar(id) => id == metavar
+      case TFun(lhs, rhs) => lhs.contains(metavar) || rhs.contains(metavar)
+    }
   }
 
   case object TUnit extends Type
@@ -330,6 +345,8 @@ object Syntax {
       this.typ = typ
       this
     }
+
+    def inferType(env: TEnv): Expr = InferenceEngine.infer(this, env)
   }
 
   case object EUnit extends Expr {
@@ -378,7 +395,16 @@ object Syntax {
 
   // Statements
 
-  sealed trait Statement
+  sealed trait Statement {
+    def inferType(typeEnv: TEnv): (Statement, TEnv) = InferenceEngine.infer(this, typeEnv)
+
+    lazy val typ: Type = this match {
+      case SBinding(_, body) => body.typ
+      case SExpr(expr) => expr.typ
+      case SBlock(stmts) => stmts.last.typ
+    }
+  }
+
   case class SBinding(id: String, body: Expr) extends Statement
   case class SExpr(expr: Expr) extends Statement
   case class SBlock(stmts: Seq[Statement]) extends Statement

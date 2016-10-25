@@ -26,6 +26,9 @@ object Errors {
     s"Invalid REPL command: $cmd"
   )
 
+  case class OccursCheckFailed(lhs: Type, rhs: Type) extends RuntimeException(s"Occurs check failed during unification. Type ${lhs.pretty} occurred in type ${rhs.pretty}.")
+  case class UnificationFailed(lhs: Type, rhs: Type) extends RuntimeException(s"Unification failed due to conflicting constraints. (${lhs.pretty} ~ ${rhs.pretty})")
+
   case object StackOverflow extends RuntimeException(s"Execution overflowed the call stack.")
   case object MissingMain extends RuntimeException(s"No main function found.")
   case object Unreachable extends RuntimeException(s"This point should be unreachable!")

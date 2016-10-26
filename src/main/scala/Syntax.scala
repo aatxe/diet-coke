@@ -342,7 +342,10 @@ object Syntax {
     var typ: Type
 
     def setType(newTyp: Type): Expr = {
-      this.typ = newTyp
+      if (typ != TMetavar() && newTyp != typ) {
+        throw Errors.UnificationFailed(typ, newTyp)
+      }
+      typ = newTyp
       this
     }
 

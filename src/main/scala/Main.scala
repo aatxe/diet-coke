@@ -44,15 +44,16 @@ object Main extends App {
 
         // Update the type environment.
         typeEnv = env.mapValues(value => value.typ) ++ typeEnvPrime
+        typeEnv = typeEnv.mapValues(typ => subst(typ))
 
         // Update the environment.
         env = Interpreter.getUpdatedEnv(prog)
 
         // Evaluate program in updated environment.
         try {
-          val res = Interpreter.evalStatement(prog).setType(prog.typ)
+          val res = Interpreter.evalStatement(prog).setType(subst(prog.typ))
           if (res != Syntax.VUnit) {
-            println(s"let res$resNum: ${subst(res.typ).pretty} = ${res.pretty}")
+            println(s"let res$resNum: ${res.typ.pretty} = ${res.pretty}")
             env = env + (s"res$resNum" -> res)
             resNum += 1
           }

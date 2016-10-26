@@ -300,6 +300,15 @@ object Syntax {
     }
   }
 
+  case object BRandom extends BuiltIn {
+    override val typ = TNum
+
+    override def apply(args: Seq[Value]): Value = args match {
+      case Seq() => VConst(CNum(scala.util.Random.nextInt))
+      case _ => throw Errors.ArityMismatch(BRandom, args.length, 0)
+    }
+  }
+
   // Types
 
   type TEnv = Map[String, Type]

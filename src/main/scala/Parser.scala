@@ -11,7 +11,7 @@ class Parser extends RegexParsers with PackratParsers {
     "fn" | "let" | "true" | "false" | "if" | "then" | "else" | "error" | builtIns
 
   lazy val builtIns: P[String] =
-    "show" | "println" | "print" | "catch" | "inject"
+    "show" | "println" | "print" | "catch" | "inject" | "random"
 
   lazy val id: P[String] =
     guard(not(reserved)) ~> """([a-zA-Z]|[^\u0000-\uFFFF])([a-zA-Z0-9]|[^\u0000-\uFFFF])*""".r
@@ -67,6 +67,7 @@ class Parser extends RegexParsers with PackratParsers {
       case "println" => BPrintln
       case "catch" => BCatch
       case "inject" => BInject
+      case "random" => BRandom
     }
 
   lazy val builtInApp: P[Expr] =

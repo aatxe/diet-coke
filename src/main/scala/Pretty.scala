@@ -47,6 +47,7 @@ object Pretty {
     case BPrintln => "println"
     case BCatch => "catch"
     case BInject => "inject"
+    case BRandom => "random"
   }
 
   def prettyOp1(op1: Op1): String = op1 match {

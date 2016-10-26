@@ -125,6 +125,11 @@ object InferenceEngine {
             }
             case _ => throw Errors.ArityMismatch(BInject, args.length, 1)
           }
+
+          case BRandom => args match {
+            case Seq() => expr.typ
+            case _ => throw Errors.ArityMismatch(BRandom, args.length, 0)
+          }
         }
       }
 

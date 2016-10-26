@@ -35,8 +35,7 @@ class Parser extends RegexParsers with PackratParsers {
     "()" ^^ { _ => TUnit }       |
     "num" ^^ { _ => TNum }       |
     "bool" ^^ { _ => TBool }     |
-    "string" ^^ { _ => TString } |
-    id ^^ { id => TId(id) }
+    "string" ^^ { _ => TString }
 
   lazy val typFun: P[Type] =
     typAtom ~ ("->" ~> typFun) ^^ { case lhs ~ rhs => TFun(lhs, rhs) } |

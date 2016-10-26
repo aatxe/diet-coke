@@ -9,7 +9,7 @@ object Subst {
 
 case class Subst private(map: Map[Type, Type]) {
   def apply(typ: Type): Type = typ match {
-    case TUnit | TNum | TString | TBool | TId(_) => typ
+    case TUnit | TNum | TString | TBool => typ
     case meta@TMetavar(_) => map.getOrElse(meta, typ)
     case TFun(lhs, rhs) => TFun(this(lhs), this(rhs))
   }

@@ -173,11 +173,6 @@ object InferenceEngine {
       Subst.singleton(meta, typ)
     }
     case (TNum, TNum) | (TBool, TBool) | (TString, TString) => Subst.empty()
-    case (t1@TId(id1), t2@TId(id2)) => if (id1 == id2) {
-      Subst.empty()
-    } else {
-      Subst.singleton(t1, t2)
-    }
     case (TFun(argT1, resT1), TFun(argT2, resT2)) => {
       val subst = unify(argT1 -> argT2)
       subst.compose(unify(subst(resT1) -> subst(resT2)))

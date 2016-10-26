@@ -318,7 +318,7 @@ object Syntax {
     lazy val pretty: String = Pretty.prettyType(this)
 
     def contains(metavar: Int): Boolean = this match {
-      case TUnit | TNum | TString | TBool | TId(_) => false
+      case TUnit | TNum | TString | TBool => false
       case TMetavar(id) => id == metavar
       case TFun(lhs, rhs) => lhs.contains(metavar) || rhs.contains(metavar)
     }
@@ -328,9 +328,11 @@ object Syntax {
   case object TNum extends Type
   case object TString extends Type
   case object TBool extends Type
-  case class TMetavar private(id: Int) extends Type
-  case class TId(id: String) extends Type
+  case class TMetavar private(id: Int) extends Effect
   case class TFun(lhs: Type, rhs: Type) extends Type
+
+  sealed trait Effect extends Type
+
 
   // Companion object for TMetavar to add constructor for fresh metavars.
   object TMetavar {

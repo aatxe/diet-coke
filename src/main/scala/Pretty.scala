@@ -8,8 +8,7 @@ object Pretty {
     case TNum => "num"
     case TString => "string"
     case TBool => "bool"
-    case TMetavar(id) => s"meta$id"
-    case TId(id) => id
+    case TMetavar(id) => s"a$id"
     case TFun(x, y) => s"(${prettyType(x)} -> ${prettyType(y)})"
   }
 

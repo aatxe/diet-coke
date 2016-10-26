@@ -12,6 +12,7 @@ object Main extends App {
   var resNum = 0
   implicit var env: Syntax.Env = Map()
   implicit var typeEnv: Syntax.TEnv = Map()
+  implicit var subst: Subst = Subst.empty()
   while (running) {
     print(prompt)
 
@@ -35,10 +36,14 @@ object Main extends App {
           case CMulti(enable) => multiline = enable
         }
       } else {
-        val (prog, typeEnvPrime) = Parser.parse(input).inferType(typeEnv ++ env.mapValues(value => value.typ))
+        val prog = Parser.parse(input)
+
+        // Run type inference on the program.
+        val (substPrime, typeEnvPrime) = prog.infer(typeEnv)
+        subst = subst.compose(substPrime)
 
         // Update the type environment.
-        typeEnv = typeEnvPrime ++ env.mapValues(value => value.typ)
+        typeEnv = env.mapValues(value => value.typ) ++ typeEnvPrime
 
         // Update the environment.
         env = Interpreter.getUpdatedEnv(prog)
@@ -47,7 +52,7 @@ object Main extends App {
         try {
           val res = Interpreter.evalStatement(prog).setType(prog.typ)
           if (res != Syntax.VUnit) {
-            println(s"let res$resNum: ${res.typ.pretty} = ${res.pretty}")
+            println(s"let res$resNum: ${subst(res.typ).pretty} = ${res.pretty}")
             env = env + (s"res$resNum" -> res)
             resNum += 1
           }

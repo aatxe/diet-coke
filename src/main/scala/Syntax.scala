@@ -341,12 +341,12 @@ object Syntax {
 
     var typ: Type
 
-    def setType(typ: Type): Expr = {
-      this.typ = typ
+    def setType(newTyp: Type): Expr = {
+      this.typ = newTyp
       this
     }
 
-    def inferType(env: TEnv): Expr = InferenceEngine.infer(this, env)
+    def infer(env: TEnv): Subst = InferenceEngine.infer(this, env)
   }
 
   case object EUnit extends Expr {
@@ -396,7 +396,7 @@ object Syntax {
   // Statements
 
   sealed trait Statement {
-    def inferType(typeEnv: TEnv): (Statement, TEnv) = InferenceEngine.infer(this, typeEnv)
+    def infer(typeEnv: TEnv): (Subst, TEnv) = InferenceEngine.infer(this, typeEnv)
 
     lazy val typ: Type = this match {
       case SBinding(_, body) => body.typ

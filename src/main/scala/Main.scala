@@ -34,6 +34,10 @@ object Main extends App {
         parseCommand(input) match {
           case CQuit => running = false
           case CMulti(enable) => multiline = enable
+          case CType(id) => typeEnv.get(id) match {
+            case Some(typ) => println(s"$id :: ${typ.pretty}")
+            case None => println(s"$id is unbound in the type environment.")
+          }
         }
       } else {
         val prog = Parser.parse(input)
@@ -71,6 +75,8 @@ object Main extends App {
     case Seq("quit") | Seq("exit") => CQuit
     case Seq("multiline", "on") | Seq("m", "on") => CMulti(true)
     case Seq("multiline", "off") | Seq("m", "off") => CMulti(false)
+    case Seq("type", id) => CType(id)
+    case Seq("t", id) => CType(id)
     case cmd +: _ => throw Errors.InvalidREPLCommand(cmd)
     case Seq() => throw Errors.Unreachable
   }
@@ -78,4 +84,5 @@ object Main extends App {
   sealed trait Command
   case object CQuit extends Command
   case class CMulti(enable: Boolean) extends Command
+  case class CType(id: String) extends Command
 }

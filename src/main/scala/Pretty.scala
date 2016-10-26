@@ -35,9 +35,9 @@ object Pretty {
     case EOp1(op, expr) => s"(${prettyOp1(op)}${prettyExpr(expr)})"
     case EOp2(op, lhs, rhs) => s"(${prettyExpr(lhs)} ${prettyOp2(op)} ${prettyExpr(rhs)})"
     case EFun(id, body) => s"($id => ${prettyExpr(body)})"
-    case EApp(fun, arg) => s"$fun($arg)"
+    case EApp(fun, arg) => s"${prettyExpr(fun)}(${prettyExpr(arg)})"
     case EBuiltIn(builtIn, args) => s"${prettyBuiltIn(builtIn)}(" + args.tail.foldLeft(prettyExpr(args.head))((acc, expr) => s"$acc, ${prettyExpr(expr)}") + ")"
-    case EIf(pred, tru, fls) => s"if $pred then $tru else $fls"
+    case EIf(pred, tru, fls) => s"if ${prettyExpr(pred)} then ${prettyExpr(tru)} else ${prettyExpr(fls)}"
     case EBlock(exprs) => "{ " + exprs.tail.foldLeft(prettyExpr(exprs.head))((acc, expr) => s"$acc; ${prettyExpr(expr)}") + " }"
   }
 

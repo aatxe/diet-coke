@@ -33,9 +33,8 @@ object Main extends App {
         parseCommand(input) match {
           case CQuit => running = false
           case CMulti(enable) => multiline = enable
-          case CType(id) => typEnv.get(id) match {
-            case Some(Syntax.Scheme(_, typ)) => println(s"$id :: ${typ.pretty}")
-            case None => throw Errors.UnboundIdentifier(id)
+          case CType(expr) => expr.infer match {
+            case (typ, _) => println(s"${expr.pretty} :: ${typ.pretty}")
           }
         }
       } else {
@@ -52,9 +51,9 @@ object Main extends App {
 
         // Evaluate program in updated environment.
         try {
-          val res = Interpreter.evalStatement(prog).setType(typ)
+          val res = Interpreter.evalStatement(prog)
           if (res != Syntax.VUnit) {
-            println(s"let res$resNum: ${res.typ.pretty} = ${res.pretty}")
+            println(s"let res$resNum: ${typ.pretty} = ${res.pretty}")
             env = env + (s"res$resNum" -> res)
             resNum += 1
           }
@@ -72,8 +71,8 @@ object Main extends App {
     case Seq("quit") | Seq("exit") => CQuit
     case Seq("multiline", "on") | Seq("m", "on") => CMulti(true)
     case Seq("multiline", "off") | Seq("m", "off") => CMulti(false)
-    case Seq("type", id) => CType(id)
-    case Seq("t", id) => CType(id)
+    case "type" +: input => CType(Parser.parseExpr(input.mkString(" ")))
+    case "t" +: input => CType(Parser.parseExpr(input.mkString(" ")))
     case cmd +: _ => throw Errors.InvalidREPLCommand(cmd)
     case Seq() => throw Errors.Unreachable
   }
@@ -81,5 +80,5 @@ object Main extends App {
   sealed trait Command
   case object CQuit extends Command
   case class CMulti(enable: Boolean) extends Command
-  case class CType(id: String) extends Command
+  case class CType(expr: Syntax.Expr) extends Command
 }

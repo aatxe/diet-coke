@@ -160,6 +160,7 @@ class Parser extends RegexParsers with PackratParsers {
 
   lazy val stmt: P[Statement] =
     rep1sep(stmtAtom, ";") ^^ {
+
       case List(stmt) => stmt
       case stmts => SBlock(stmts)
     }
@@ -176,4 +177,7 @@ object Parser {
 
   def parse(str: String): Statement =
     parser.parseString(str, parser.stmt)
+
+  def parseExpr(str: String): Expr =
+    parser.parseString(str, parser.expr)
 }

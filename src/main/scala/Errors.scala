@@ -26,8 +26,12 @@ object Errors {
     s"Invalid REPL command: $cmd"
   )
 
+  case object RecursiveRowFound extends RuntimeException(s"Unification failed after finding a recursive row.")
+  case class RowContainedIllegalLabels(typ: Type, labels: Set[String]) extends RuntimeException(s"Unification failed because ${typ.pretty} contained illegal labels ($labels).")
+  case class RowRewriteFailed(typ: Type, label: String) extends RuntimeException(s"Unification failed because the row ${typ.pretty} cannot be rewritten as an extension of label $label.")
   case class OccursCheckFailed(lhs: Type, rhs: Type) extends RuntimeException(s"Occurs check failed during unification. Type ${lhs.pretty} occurred in type ${rhs.pretty}.")
   case class UnificationFailed(lhs: Type, rhs: Type) extends RuntimeException(s"Unification failed due to conflicting constraints. (${lhs.pretty} ~ ${rhs.pretty})")
+  case class KindMismatch(lhs: Kind, rhs: Kind) extends RuntimeException(s"Unification failed due to a kind mismatch. (${lhs.pretty} ~ ${rhs.pretty})")
 
   case object StackOverflow extends RuntimeException(s"Execution overflowed the call stack.")
   case object MissingMain extends RuntimeException(s"No main function found.")

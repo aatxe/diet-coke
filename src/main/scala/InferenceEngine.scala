@@ -3,203 +3,173 @@ package coke
 import Syntax._
 
 object InferenceEngine {
-  type Constraint = (Type, Type)
 
-  def getArgType(op: Op1): Type = op match {
-    case ONot => TBool
-    case ONeg => TNum
+  def freeTypeVars(scheme: Scheme): Set[TyVar] = scheme.typ.freeTypeVars diff scheme.tyvars.toSet
+
+  def freeTypeVars(env: TEnv): Set[TyVar] = env.values.foldRight[Set[TyVar]](Set()) {
+    case (scheme, acc) => acc union freeTypeVars(scheme)
   }
 
-  def getArgType(op: Op2): Type = op match {
-    case OAdd | OSub | OMul | ODiv | OMod => TNum
-    case OLt | OLte | OGt | OGte | OEq | ONEq => TNum
-    case OConcat => TString
-    case OAnd | OOr => TBool
-  }
+  def generalize(typ: Type)(implicit env: TEnv): Scheme = Scheme(
+    typ.freeTypeVars.diff(freeTypeVars(env)).toSeq, typ
+  )
 
-  def generateConstraints(stmt: Statement, env: TEnv): (Seq[Constraint], TEnv) = stmt match {
-    case SBinding(id, body) => {
-      val envPrime = env + (id -> body.typ)
-      (generateConstraints(body, envPrime), envPrime)
+  def instantiate(scheme: Scheme): Type = Subst(scheme.tyvars.zip(scheme.tyvars.map({
+    case TyVar(name, kind, lacks) => TVar(name.takeWhile(c => !c.isDigit), kind, lacks)
+  })).toMap)(scheme.typ)
+
+  def unify(t1: Type, t2: Type): Subst = (t1, t2) match {
+    case (TFun(l1, e1, r1), TFun(l2, e2, r2)) => {
+      val s1 = unify(l1, l2)
+      val s2 = unify(s1(e1), s1(e2))
+      val s3 = s2 compose s1
+      val s4 = unify(s3(r1), s3(r2))
+      s4 compose s3
     }
-    case SExpr(expr) => (generateConstraints(expr, env), env)
-    case SBlock(stmts) => stmts.foldLeft[(Seq[Constraint], TEnv)]((Seq(), Map())) {
-      case ((acc, env), stmt) => {
-        val (accPrime, envPrime) = generateConstraints(stmt, env)
-        (accPrime ++ acc, envPrime)
-      }
-    }
-  }
-
-  def generateConstraints(expr: Expr, initEnv: TEnv): Seq[Constraint] = {
-    var res: Seq[Constraint] = Seq()
-
-    def generate(expr: Expr)(implicit env: TEnv): Type = expr match {
-      case EUnit | EError(_) => TUnit
-
-      case EId(id) => {
-        res = (expr.typ -> env(id)) +: res
-        env(id)
-      }
-
-      case EConst(c) => c.typ
-
-      case EOp1(op1, expr) => {
-        res = Seq(
-          expr.typ -> getArgType(op1),
-          expr.typ -> generate(expr)
-        ) ++ res
-        op1.typ
-      }
-
-      case EOp2(op2, lhs, rhs) => {
-        res = Seq(
-          lhs.typ -> getArgType(op2),
-          rhs.typ -> getArgType(op2),
-          lhs.typ -> generate(lhs),
-          rhs.typ -> generate(rhs)
-        ) ++ res
-        op2.typ
-      }
-
-      case EFun(id, body) => expr.typ match {
-        case TFun(argT, resT) => {
-          val resGenT = generate(body)(env + (id -> argT))
-          res = (resT -> resGenT) +: res
-          TFun(argT, resGenT)
-        }
-        case _ => throw Errors.Unreachable
-      }
-
-      case EApp(fun, arg) => {
-        val funT = generate(fun)
-        val argT = generate(arg)
-        res = (funT -> TFun(argT, expr.typ)) +: res
-        expr.typ
-      }
-
-      case EBuiltIn(builtIn, args) => {
-        builtIn match {
-          case BShow => args match {
-            case Seq(arg) => {
-              // show is polymorphic over all types, and thus generates no constraints.
-              // This saves us from having to actually implement polymorphism.
-              val argT = generate(arg)
-              TString
-            }
-            case _ => throw Errors.ArityMismatch(BShow, args.length, 1)
-          }
-
-          case BPrint | BPrintln => args match {
-            case Seq(arg) => {
-              val argT = generate(arg)
-              res = (argT -> TString) +: res
-              TUnit
-            }
-            case _ => throw Errors.ArityMismatch(builtIn, args.length, 1)
-          }
-
-          case BCatch => args match {
-            case Seq(thunk, handler) => {
-              val thunkT = generate(thunk)
-              val handlerT = generate(handler)
-              res = Seq(
-                thunk.typ -> thunkT,
-                handler.typ -> handlerT,
-                handler.typ -> TFun(TString, thunk.typ),
-                expr.typ -> thunk.typ
-              ) ++ res
-              expr.typ
-            }
-            case _ => throw Errors.ArityMismatch(BCatch, args.length, 2)
-          }
-
-          case BInject => args match {
-            case Seq(arg) => {
-              val argT = generate(arg)
-              res = Seq(
-                arg.typ -> argT,
-                expr.typ -> arg.typ
-              ) ++ res
-              expr.typ
-            }
-            case _ => throw Errors.ArityMismatch(BInject, args.length, 1)
-          }
-
-          case BRandom => args match {
-            case Seq() => expr.typ
-            case _ => throw Errors.ArityMismatch(BRandom, args.length, 0)
-          }
-        }
-      }
-
-      case EIf(pred, tru, fls) => {
-        val predT = generate(pred)
-        val truT = generate(tru)
-        val flsT = generate(fls)
-        res = Seq(
-          predT -> TBool,
-          truT -> flsT,
-          expr.typ -> truT
-        ) ++ res
-        expr.typ
-      }
-
-      case EBlock(exprs) => {
-        exprs.foldLeft[Type](TUnit) {
-          case (_, expr) => generate(expr)
+    case (TRowExtend(label1, typ1, tail1), row2@TRowExtend(_, _, _)) => {
+      val (typ2, tail2, s1) = rewriteRow(row2, label1)
+      decomposeRow(tail1) match {
+        case (_, Some(tv)) if s1 contains tv => throw Errors.RecursiveRowFound
+        case _ => {
+          val s2 = unify(s1(typ1), s1(typ2))
+          val s3 = s2 compose s1
+          val s4 = unify(s3(tail1), s3(tail2))
+          s4 compose s3
         }
       }
     }
-
-    generate(expr)(initEnv)
-    res
+    case (TVar(tv1), TVar(tv2)) => unionConstraints(tv1, tv2)
+    case (TVar(tv), typ) => varBind(tv, typ)
+    case (typ, TVar(tv)) => varBind(tv, typ)
+    case (TUnit, TUnit) | (TNum, TNum) | (TBool, TBool) |
+         (TString, TString) | (TRowEmpty, TRowEmpty) => Subst.empty
+    case _ => throw Errors.UnificationFailed(t1, t2)
   }
 
-  def unify(constraint: Constraint): Subst = constraint match {
-    case (m1@TMetavar(id1), m2@TMetavar(id2)) => if (id1 == id2) {
-      Subst.empty()
-    } else {
-      Subst.singleton(m1, m2)
+  def unionConstraints(tv1: TyVar, tv2: TyVar): Subst = (tv1, tv2) match {
+    case _ if tv1 == tv2 => Subst.empty
+    case (TyVar(_, KStar, _), TyVar(_, KStar, _)) => Subst.singleton(tv1, TVar(tv2))
+    case (TyVar(_, KRow, c1), TyVar(_, KRow, c2)) => {
+      val fresh = TVar(c1 union c2)
+      Subst.singleton(tv1, fresh) compose Subst.singleton(tv2, fresh)
     }
-    case (meta@TMetavar(id), typ) => if (typ.contains(id)) {
-      throw Errors.OccursCheckFailed(meta, typ)
-    } else {
-      Subst.singleton(meta, typ)
-    }
-    case (typ, meta@TMetavar(id)) => if (typ.contains(id)) {
-      throw Errors.OccursCheckFailed(meta, typ)
-    } else {
-      Subst.singleton(meta, typ)
-    }
-    case (TNum, TNum) | (TBool, TBool) | (TString, TString) => Subst.empty()
-    case (TFun(argT1, resT1), TFun(argT2, resT2)) => {
-      val subst = unify(argT1 -> argT2)
-      subst.compose(unify(subst(resT1) -> subst(resT2)))
-    }
-    case (t1, t2) => throw Errors.UnificationFailed(t1, t2)
+    case (TyVar(_, k1, _), TyVar(_, k2, _)) => throw Errors.KindMismatch(k1, k2)
   }
 
-  def unifyAll(constraints: Seq[Constraint]): Subst = constraints match {
-    case Seq() => Subst.empty()
-    case constraint +: constraints => {
-      val subst = unify(constraint)
-      val constraintsPrime = constraints.map {
-        case (t1, t2) => (subst(t1), subst(t2))
+  def varBind(tv: TyVar, typ: Type): Subst = tv.kind match {
+    case _ if typ.freeTypeVars contains tv => throw Errors.OccursCheckFailed(TVar(tv), typ)
+    case KStar => Subst.singleton(tv, typ)
+    case KRow => varBindRow(tv, typ)
+  }
+
+  def varBindRow(tv: TyVar, typ: Type): Subst = {
+    val (lpairs, tvPrime) = decomposeRow(typ)
+    val labels = lpairs.map(_._1).toSet
+
+    val s1 = Subst.singleton(tv, typ)
+    (tv.lacks.intersect(labels).toSeq, tvPrime) match {
+      case (Seq(), None) => s1
+      case (Seq(), Some(r1)) => {
+        val r2 = TVar(labels union r1.lacks)
+        val s2 = Subst.singleton(r1, r2)
+        s1 compose s2
       }
-      subst.compose(unifyAll(constraintsPrime))
+      case (labels, _) => throw Errors.RowContainedIllegalLabels(typ, labels.toSet)
     }
   }
 
-  def infer(expr: Expr, initEnv: TEnv): Subst = {
-    val constraints = generateConstraints(expr, initEnv)
-    val subst = unifyAll(constraints)
-    subst
+  def decomposeRow(typ: Type): (Seq[(String, Type)], Option[TyVar]) = typ match {
+    case TVar(v) => (Seq(), Some(v))
+    case TRowEmpty => (Seq(), None)
+    case TRowExtend(label, typ, tail) => {
+      val (labels, tv) = decomposeRow(tail)
+      ((label -> typ) +: labels, tv)
+    }
+    case _ => throw Errors.Unreachable
   }
 
-  def infer(stmt: Statement, initEnv: TEnv): (Subst, TEnv) = {
-    val (constraints, env) = generateConstraints(stmt, initEnv)
-    val subst = unifyAll(constraints)
-    (subst, env)
+  def rewriteRow(rowTyp: Type, newLabel: String): (Type, Type, Subst) = rowTyp match {
+    case TRowEmpty => throw Errors.RowRewriteFailed(rowTyp, newLabel)
+    case TRowExtend(label, typ, tail) if label == newLabel => (typ, tail, Subst.empty)
+    case TRowExtend(label, typ, tail) => tail match {
+      case TVar(tv1) => {
+        val freshEffect = TVar(Set(newLabel))
+        val fresh = TVar("a")
+        val s = varBindRow(tv1, TRowExtend(newLabel, fresh, freshEffect))
+        (fresh, s(TRowExtend(label, typ, freshEffect)), s)
+      }
+      case _ => {
+        val (typPrime, tailPrime, s) = rewriteRow(tail, newLabel)
+        (typPrime, TRowExtend(label, typ, tailPrime), s)
+      }
+    }
+  }
+
+  def infer(expr: Expr)(implicit env: TEnv): (Subst, Type, Effect) = expr match {
+    case EUnit => (Subst.empty, TUnit, TVar())
+    case EConst(const) => (Subst.empty, const.typ, TVar())
+    case EError(_) => (Subst.empty, TVar("a"), TRowExtend("exn", TUnit, TVar()))
+    case EId(id) => env.get(id) match {
+      case None => throw Errors.UnboundIdentifier(id)
+      case Some(scheme) => (Subst.empty, instantiate(scheme), TVar())
+    }
+    case EOp1(op1, expr) => {
+      val (s1, t, e) = infer(expr)
+      val tv = TVar("a")
+      val s2 = unify(TFun(s1(t), TVar(), tv), op1.typ)
+      (s2, s2(tv), e)
+    }
+    case EOp2(op2, lhs, rhs) => {
+      val (s1, t1, e1) = infer(lhs)
+      val (s2, t2, e2) = infer(rhs)
+      val tv = TVar("a")
+      val s3 = unify(TFun(s1(t1), TVar(), TFun(s2(t2), TVar(), tv)), op2.typ)
+      val s4 = unify(e1, e2)
+      (s3, s3(tv), s4(e2))
+    }
+    case EFix(_, expr) => {
+      val (s1, t, e) = infer(expr)
+      val tv = TVar("a")
+      val s2 = unify(TFun(tv, e, tv), t)
+      val s3 = s1 compose s2
+      (s3, s3(t), s3(e))
+    }
+    case EFun(id, body) => {
+      val tv = TVar("a")
+      val (s, t, e) = infer(body)(env + (id -> Scheme(Seq(), tv)))
+      (s, s(TFun(tv, e, t)), TVar())
+    }
+    case EApp(fun, arg) => {
+      val (s1, t1, e1) = infer(fun)
+      val (s2, t2, e2) = infer(arg)
+      val tv = TVar("a")
+      val e3 = TVar()
+      val s3 = unify(s1(t1), TFun(s2(t2), e3, tv))
+      val s4 = unify(e2, e3)
+      val s5 = s4 compose s3
+      (s5, s5(tv), s5(e3))
+    }
+    case EBuiltIn(builtIn, args) => ???
+    case EIf(pred, tru, fls) => {
+      val (s1, t1, e1) = infer(pred)
+      val (s2, t2, e2) = infer(tru)
+      val (s3, t3, e3) = infer(fls)
+      val s4 = unify(s1(t1), TBool)
+      val s5 = unify(s2(t2), s3(t3))
+      val s6 = s5 compose s4
+      (s6, s6(t2), e2)
+    }
+    case EBlock(exprs) => exprs.foldLeft[(Subst, Type, Effect)]((Subst.empty, TUnit, TVar())) {
+      case ((_, _, e1), expr) => infer(expr) match {
+        case (s1, t, e2) => {
+          val tv = TVar("a")
+          val s2 = unify(s1(t), tv)
+          val s3 = unify(e1, e2)
+          (s2, s2(tv), s3(e2))
+        }
+      }
+    } match {
+      case (s, t, e) => (s, TFun(TUnit, e, t), TVar())
+    }
   }
 }

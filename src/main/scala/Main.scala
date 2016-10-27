@@ -11,8 +11,7 @@ object Main extends App {
   var multiline = false
   var resNum = 0
   implicit var env: Syntax.Env = Map()
-  implicit var typeEnv: Syntax.TEnv = Map()
-  implicit var subst: Subst = Subst.empty()
+  implicit var typEnv: Syntax.TEnv = Map()
   while (running) {
     print(prompt)
 
@@ -34,28 +33,26 @@ object Main extends App {
         parseCommand(input) match {
           case CQuit => running = false
           case CMulti(enable) => multiline = enable
-          case CType(id) => typeEnv.get(id) match {
-            case Some(typ) => println(s"$id :: ${typ.pretty}")
-            case None => println(s"$id is unbound in the type environment.")
+          case CType(id) => typEnv.get(id) match {
+            case Some(Syntax.Scheme(_, typ)) => println(s"$id :: ${typ.pretty}")
+            case None => throw Errors.UnboundIdentifier(id)
           }
         }
       } else {
         val prog = Parser.parse(input)
 
         // Run type inference on the program.
-        val (substPrime, typeEnvPrime) = prog.infer(typeEnv)
-        subst = subst.compose(substPrime)
+        val (typEnvPrime, typ, _) = prog.infer
 
         // Update the type environment.
-        typeEnv = env.mapValues(value => value.typ) ++ typeEnvPrime
-        typeEnv = typeEnv.mapValues(typ => subst(typ))
+        typEnv = typEnvPrime
 
         // Update the environment.
         env = Interpreter.getUpdatedEnv(prog)
 
         // Evaluate program in updated environment.
         try {
-          val res = Interpreter.evalStatement(prog).setType(subst(prog.typ))
+          val res = Interpreter.evalStatement(prog).setType(typ)
           if (res != Syntax.VUnit) {
             println(s"let res$resNum: ${res.typ.pretty} = ${res.pretty}")
             env = env + (s"res$resNum" -> res)

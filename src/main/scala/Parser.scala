@@ -38,14 +38,11 @@ class Parser extends RegexParsers with PackratParsers {
     "string" ^^ { _ => TString }
 
   lazy val typFun: P[Type] =
-    typAtom ~ ("->" ~> typFun) ^^ { case lhs ~ rhs => TFun(lhs, rhs) } |
+    typAtom ~ ("->" ~> typFun) ^^ { case lhs ~ rhs => TFun(lhs, TVar(), rhs) } |
     typAtom
 
   lazy val typ: P[Type] =
     typFun
-
-  lazy val typedExpr: P[Expr] =
-    expr ~ ("::" ~> typ) ^^ { case expr ~ typ => expr.setType(typ) }
 
   lazy val atom: P[Expr] =
     "()" ^^ { _ => EUnit }  |
@@ -53,7 +50,6 @@ class Parser extends RegexParsers with PackratParsers {
     const ^^ { EConst(_) }  |
     builtInApp              |
     error                   |
-    "(" ~> typedExpr <~ ")" |
     "(" ~> expr <~ ")"
 
   lazy val error: P[Expr] =
@@ -145,9 +141,9 @@ class Parser extends RegexParsers with PackratParsers {
   lazy val funcDecl: P[Statement] =
     ("fn" ~> id) ~ ("(" ~> repsep(id, ",") <~ ")") ~ ("=" ~> expr) ^^ {
       case id ~ Nil ~ body => SBinding(id, body)
-      case id ~ args ~ body => SBinding(id, args.foldRight(body) {
+      case id ~ args ~ body => SBinding(id, EFix(id, args.foldRight(body) {
         case (arg, acc) => EFun(arg, acc)
-      })
+      }))
     }
 
   lazy val exprStmt: P[Statement] =

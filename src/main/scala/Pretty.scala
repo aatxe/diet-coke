@@ -3,18 +3,26 @@ package coke
 import Syntax._
 
 object Pretty {
+  def prettyKind(kind: Kind): String = kind match {
+    case KStar => "*"
+    case KRow => "e"
+  }
+
   def prettyType(typ: Type): String = typ match {
     case TUnit => "()"
     case TNum => "num"
     case TString => "string"
     case TBool => "bool"
-    case TMetavar(id) => s"a$id"
-    case TFun(x, y) => s"(${prettyType(x)} -> ${prettyType(y)})"
+    case TFun(x, e, y) => s"(${prettyType(x)} -> ${prettyType(e)} ${prettyType(y)})"
+    case TVar(tyvar) => tyvar.name
+    case TRowEmpty => "<>"
+    case TRowExtend(label, lhs, rhs) => s"<$label: ${prettyType(lhs)}, ${prettyType(rhs)}>"
   }
 
   def prettyValue(value: Value): String = value match {
     case VUnit => "()"
     case VConst(c) => prettyConst(c)
+    case VFix(id, expr) => s"fix $id => ${prettyExpr(expr)}"
     case VClosure(id, body, _) => s"$id => ${prettyExpr(body)}"
     case VThunk(body, _) => "{ " + body.tail.foldLeft(prettyExpr(body.head))((acc, expr) => s"$acc; ${prettyExpr(expr)}") + " }"
     case VExpr(e) => prettyExpr(e)
@@ -33,6 +41,7 @@ object Pretty {
     case EConst(c) => prettyConst(c)
     case EOp1(op, expr) => s"(${prettyOp1(op)}${prettyExpr(expr)})"
     case EOp2(op, lhs, rhs) => s"(${prettyExpr(lhs)} ${prettyOp2(op)} ${prettyExpr(rhs)})"
+    case EFix(id, expr) => s"(fix $id => ${prettyExpr(expr)})"
     case EFun(id, body) => s"($id => ${prettyExpr(body)})"
     case EApp(fun, arg) => s"${prettyExpr(fun)}(${prettyExpr(arg)})"
     case EBuiltIn(builtIn, args) => s"${prettyBuiltIn(builtIn)}(" + args.tail.foldLeft(prettyExpr(args.head))((acc, expr) => s"$acc, ${prettyExpr(expr)}") + ")"

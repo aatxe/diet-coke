@@ -43,10 +43,11 @@ object Interpreter {
     case EError(msg) => throw LanguageException(msg, 0)
     case EId(id) => env.getOrElse(id, throw UnboundIdentifier(id))
     case EConst(c) => VConst(c)
+    case EFix(id, expr) => evalExpr(expr)(env + (id -> VFix(id, expr)))
     case EFun(id, body) => VClosure(id, body, env)
     case EOp1(op, arg) => evalOp1(op, evalExpr(arg))
     case EOp2(op, lhs, rhs) => evalOp2(op, evalExpr(lhs), evalExpr(rhs))
-    case EApp(fun, arg) => evalApp(evalExpr(fun), evalExpr(arg))
+    case EApp(fun, arg) => evalApp(evalExpr(fun), arg)
     case EBuiltIn(builtIn, args) => evalBuiltIn(builtIn, args.map(evalExpr(_)))
     case EIf(pred, tru, fls) => evalIf(evalExpr(pred), tru, fls)
     case EBlock(exprs) => VThunk(exprs, env)
@@ -69,8 +70,9 @@ object Interpreter {
     case (_, expr) => evalExpr(expr)(thunk.env)
   }
 
-  def evalApp(fun: Value, arg: Value)(implicit env: Env): Value = fun match {
-    case VClosure(id, body, envLocal) => evalExpr(body)(envLocal + (id -> arg))
+  def evalApp(fun: Value, arg: Expr)(implicit env: Env): Value = fun match {
+    case VFix(id, body) => evalExpr(EApp(body, arg))
+    case VClosure(id, body, envLocal) => evalExpr(body)(envLocal + (id -> evalExpr(arg)))
     case VThunk(body, envLocal) => body.foldLeft[Value](VUnit) { case (_, expr) => evalExpr(expr)(envLocal) }
     case VExpr(fun) => evalApp(evalExpr(fun), arg)
     case _ => ???

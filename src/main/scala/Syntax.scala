@@ -11,6 +11,7 @@ object Syntax {
     def typeString: String = this match {
       case VUnit => "()"
       case VConst(c) => c.typ.pretty
+      case VFix(_, _) => "fixpoint"
       case VClosure(_, _, _) => "function"
       case VThunk(_, _) => "thunk"
       case VExpr(_) => "expression"
@@ -18,7 +19,7 @@ object Syntax {
 
     lazy val pretty: String = Pretty.prettyValue(this)
 
-    var typ: Type = TMetavar()
+    var typ: Type = TVar("a")
     def setType(typ: Type): Value = {
       this.typ = typ
       this
@@ -27,6 +28,7 @@ object Syntax {
 
   case object VUnit extends Value
   case class VConst(c: Const) extends Value
+  case class VFix(id: String, expr: Expr) extends Value
   case class VClosure(id: String, body: Expr, env: Env) extends Value
   case class VThunk(body: Seq[Expr], env: Env) extends Value
   case class VExpr(e: Expr) extends Value
@@ -62,7 +64,7 @@ object Syntax {
 
 
   case object ONot extends Op1 {
-    override val typ = TBool
+    override val typ = TFun(TBool, TRowEmpty, TBool)
 
     override def apply(arg: Const): Const = arg match {
       case CBool(b) => CBool(!b)
@@ -71,7 +73,7 @@ object Syntax {
   }
 
   case object ONeg extends Op1 {
-    override val typ = TNum
+    override val typ = TFun(TNum, TRowEmpty, TNum)
 
     override def apply(arg: Const): Const = arg match {
       case CNum(n) => CNum(-n)
@@ -88,7 +90,7 @@ object Syntax {
   // Binary operations on numbers yielding numbers.
 
   case object OAdd extends Op2 {
-    override val typ = TNum
+    override val typ = TFun(TNum, TRowEmpty, TFun(TNum, TRowEmpty, TNum))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m + n)
@@ -98,7 +100,7 @@ object Syntax {
   }
 
   case object OSub extends Op2 {
-    override val typ = TNum
+    override val typ = TFun(TNum, TRowEmpty, TFun(TNum, TRowEmpty, TNum))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m - n)
@@ -108,9 +110,9 @@ object Syntax {
   }
 
   case object OMul extends Op2 {
-    override val typ = TNum
+    override val typ = TFun(TNum, TRowEmpty, TFun(TNum, TRowEmpty, TNum))
 
-    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match { 
+    override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m * n)
       case (CNum(_), bad) => throw Errors.InvalidOpArgument(OMul, bad.typ.pretty, "num")
       case (bad, _) => throw Errors.InvalidOpArgument(OMul, bad.typ.pretty, "num")
@@ -118,7 +120,7 @@ object Syntax {
   }
 
   case object ODiv extends Op2 {
-    override val typ = TNum
+    override val typ = TFun(TNum, TRowEmpty, TFun(TNum, TRowEmpty, TNum))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m / n)
@@ -128,7 +130,7 @@ object Syntax {
   }
 
   case object OMod extends Op2 {
-    override val typ = TNum
+    override val typ = TFun(TNum, TRowEmpty, TFun(TNum, TRowEmpty, TNum))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CNum(m % n)
@@ -140,7 +142,7 @@ object Syntax {
   // Binary operations on numbers yielding booleans
 
   case object OLt extends Op2 {
-    override val typ = TBool
+    override val typ = TFun(TNum, TRowEmpty, TFun(TNum, TRowEmpty, TBool))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m < n)
@@ -150,7 +152,7 @@ object Syntax {
   }
 
   case object OLte extends Op2 {
-    override val typ = TBool
+    override val typ = TFun(TNum, TRowEmpty, TFun(TNum, TRowEmpty, TBool))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m <= n)
@@ -160,7 +162,7 @@ object Syntax {
   }
 
   case object OGt extends Op2 {
-    override val typ = TBool
+    override val typ = TFun(TNum, TRowEmpty, TFun(TNum, TRowEmpty, TBool))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m > n)
@@ -170,7 +172,7 @@ object Syntax {
   }
 
   case object OGte extends Op2 {
-    override val typ = TBool
+    override val typ = TFun(TNum, TRowEmpty, TFun(TNum, TRowEmpty, TBool))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m >= n)
@@ -180,7 +182,8 @@ object Syntax {
   }
 
   case object OEq extends Op2 {
-    override val typ = TBool
+    val argTyp = TVar("a")
+    override val typ = TFun(argTyp, TRowEmpty, TFun(argTyp, TRowEmpty, TBool))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m == n)
@@ -190,7 +193,8 @@ object Syntax {
   }
 
   case object ONEq extends Op2 {
-    override val typ = TBool
+    val argTyp = TVar("a")
+    override val typ = TFun(argTyp, TRowEmpty, TFun(argTyp, TRowEmpty, TBool))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CNum(m), CNum(n)) => CBool(m != n)
@@ -202,7 +206,7 @@ object Syntax {
   // Binary operations on strings yielding strings
 
   case object OConcat extends Op2 {
-    override val typ = TString
+    override val typ = TFun(TString, TRowEmpty, TFun(TString, TRowEmpty, TString))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CString(m), CString(n)) => CString(m + n)
@@ -214,7 +218,7 @@ object Syntax {
   // Binary operations on booleans yielding booleans
 
   case object OAnd extends Op2 {
-    override val typ = TBool
+    override val typ = TFun(TBool, TRowEmpty, TFun(TBool, TRowEmpty, TBool))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CBool(m), CBool(n)) => CBool(m && n)
@@ -224,7 +228,7 @@ object Syntax {
   }
 
   case object OOr extends Op2 {
-    override val typ = TBool
+    override val typ = TFun(TBool, TRowEmpty, TFun(TBool, TRowEmpty, TBool))
 
     override def apply(lhs: Const, rhs: Const): Const = (lhs, rhs) match {
       case (CBool(m), CBool(n)) => CBool(m || n)
@@ -242,7 +246,7 @@ object Syntax {
   }
 
   case object BShow extends BuiltIn {
-    override val typ = TString
+    override val typ = TFun(TVar("a"), TRowEmpty, TString)
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq(value) => VConst(CString(value.pretty))
@@ -251,7 +255,7 @@ object Syntax {
   }
 
   case object BPrint extends BuiltIn {
-    override val typ = TUnit
+    override val typ = TFun(TString, TRowExtend("io", TUnit, TRowEmpty), TUnit)
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq(VConst(CString(str))) => print(str); VUnit
@@ -261,7 +265,7 @@ object Syntax {
   }
 
   case object BPrintln extends BuiltIn {
-    override val typ = TUnit
+    override val typ = TFun(TString, TRowExtend("io", TUnit, TRowEmpty), TUnit)
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq(VConst(CString(str))) => println(str); VUnit
@@ -271,7 +275,10 @@ object Syntax {
   }
 
   case object BCatch extends BuiltIn {
-    override val typ = TMetavar()
+    val effect = TVar()
+    val exnEffect = TRowExtend("exn", TUnit, effect)
+    val argTyp = TVar("a")
+    override val typ = TFun(TFun(TUnit, exnEffect, argTyp), TRowEmpty, TFun(TFun(TString, effect, argTyp), effect, argTyp))
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq(thunk@VThunk(_, _), VClosure(id, exnBody, exnEnv)) => Try(Interpreter.evalThunk(thunk)) match {
@@ -287,7 +294,11 @@ object Syntax {
   }
 
   case object BInject extends BuiltIn {
-    override val typ = TMetavar()
+    val effect = TVar()
+    val exnEffect = TRowExtend("exn", TUnit, effect)
+    val exnExnEffect = TRowExtend("exn", TUnit, exnEffect)
+    val argTyp = TVar("a")
+    override val typ = TFun(TFun(TUnit, exnEffect, argTyp), TRowEmpty, TFun(TUnit, exnExnEffect, argTyp))
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq(thunk@VThunk(_, _)) => Try(Interpreter.evalThunk(thunk)) match {
@@ -301,7 +312,9 @@ object Syntax {
   }
 
   case object BRandom extends BuiltIn {
-    override val typ = TNum
+    val effect = TVar()
+    val ndetEffect = TRowExtend("ndet", TUnit, effect)
+    override val typ = TFun(TUnit, ndetEffect, TNum)
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq() => VConst(CNum(scala.util.Random.nextInt))
@@ -311,16 +324,29 @@ object Syntax {
 
   // Types
 
-  type TEnv = Map[String, Type]
+  sealed trait Kind {
+    def pretty: String = Pretty.prettyKind(this)
+  }
+
+  case object KStar extends Kind
+  case object KRow extends Kind
+
+  case class TyVar(name: String, kind: Kind, lacks: Set[String])
+  case class Scheme(tyvars: Seq[TyVar], typ: Type)
+
+  type TEnv = Map[String, Scheme]
   def emptyTypeEnv(): TEnv = Map()
+
+  type Effect = Type
 
   sealed trait Type {
     lazy val pretty: String = Pretty.prettyType(this)
 
-    def contains(metavar: Int): Boolean = this match {
-      case TUnit | TNum | TString | TBool => false
-      case TMetavar(id) => id == metavar
-      case TFun(lhs, rhs) => lhs.contains(metavar) || rhs.contains(metavar)
+    lazy val freeTypeVars: Set[TyVar] = this match {
+      case TUnit | TNum | TString | TBool | TRowEmpty => Set()
+      case TVar(v) => Set(v)
+      case TFun(lhs, eff, rhs) => lhs.freeTypeVars union eff.freeTypeVars union rhs.freeTypeVars
+      case TRowExtend(_, lhs, rhs) => lhs.freeTypeVars union rhs.freeTypeVars
     }
   }
 
@@ -328,21 +354,27 @@ object Syntax {
   case object TNum extends Type
   case object TString extends Type
   case object TBool extends Type
-  case class TMetavar private(id: Int) extends Effect
-  case class TFun(lhs: Type, rhs: Type) extends Type
+  case class TVar(v: TyVar) extends Type
+  case class TFun(lhs: Type, eff: Effect , rhs: Type) extends Type
 
-  sealed trait Effect extends Type
+  case object TRowEmpty extends Type
+  case class TRowExtend(label: String, lhs: Type, rhs: Type) extends Type
 
+  // Companion object for producing fresh type variables.
+  object TVar {
+    var count = 0
 
-  // Companion object for TMetavar to add constructor for fresh metavars.
-  object TMetavar {
-    private var nextId = 0
-
-    def apply(): TMetavar = {
-      val res = TMetavar(nextId)
-      nextId += 1
+    def apply(name: String, kind: Kind, lacks: Set[String]): TVar = {
+      val res = TVar(TyVar(s"$name$count", kind, lacks))
+      count += 1
       res
     }
+
+    def apply(name: String): TVar = TVar(name, KStar, Set())
+
+    def apply(lacks: Set[String]): TVar = TVar("e", KRow, lacks)
+
+    def apply(): TVar = TVar(Set[String]())
   }
 
   // Expressions
@@ -350,72 +382,38 @@ object Syntax {
   sealed trait Expr {
     lazy val pretty: String = Pretty.prettyExpr(this)
 
-    var typ: Type
-
-    def setType(newTyp: Type): Expr = {
-      if (typ != TMetavar() && newTyp != typ) {
-        throw Errors.UnificationFailed(typ, newTyp)
-      }
-      typ = newTyp
-      this
+    def infer(implicit env: TEnv): (Type, Effect) = InferenceEngine.infer(this) match {
+      case (_, t, e) => (t, e)
     }
-
-    def infer(env: TEnv): Subst = InferenceEngine.infer(this, env)
   }
 
-  case object EUnit extends Expr {
-    var typ: Type = TUnit
-  }
-
-  case class EError(msg: String) extends Expr {
-    var typ: Type = TUnit
-  }
-
-  case class EId(id: String) extends Expr {
-    var typ: Type = TMetavar()
-  }
-
-  case class EConst(c: Const) extends Expr {
-    var typ: Type = c.typ
-  }
-
-  case class EOp1(op1: Op1, expr: Expr) extends Expr {
-    var typ: Type = op1.typ
-  }
-
-  case class EOp2(op2: Op2, lhs: Expr, rhs: Expr) extends Expr {
-    var typ: Type = op2.typ
-  }
-
-  case class EFun(id: String, body: Expr) extends Expr {
-    var typ: Type = TFun(TMetavar(), body.typ)
-  }
-
-  case class EApp(fun: Expr, arg: Expr) extends Expr {
-    var typ: Type = TMetavar()
-  }
-
-  case class EBuiltIn(builtIn: BuiltIn, args: Seq[Expr]) extends Expr {
-    var typ: Type = builtIn.typ
-  }
-
-  case class EIf(pred: Expr, tru: Expr, fls: Expr) extends Expr {
-    var typ: Type = TMetavar()
-  }
-
-  case class EBlock(exprs: Seq[Expr]) extends Expr {
-    var typ: Type = exprs.last.typ
-  }
+  case object EUnit extends Expr
+  case class EError(msg: String) extends Expr
+  case class EId(id: String) extends Expr
+  case class EConst(c: Const) extends Expr
+  case class EOp1(op1: Op1, expr: Expr) extends Expr
+  case class EOp2(op2: Op2, lhs: Expr, rhs: Expr) extends Expr
+  case class EFix(id: String, expr: Expr) extends Expr
+  case class EFun(id: String, body: Expr) extends Expr
+  case class EApp(fun: Expr, arg: Expr) extends Expr
+  case class EBuiltIn(builtIn: BuiltIn, args: Seq[Expr]) extends Expr
+  case class EIf(pred: Expr, tru: Expr, fls: Expr) extends Expr
+  case class EBlock(exprs: Seq[Expr]) extends Expr
 
   // Statements
 
   sealed trait Statement {
-    def infer(typeEnv: TEnv): (Subst, TEnv) = InferenceEngine.infer(this, typeEnv)
-
-    lazy val typ: Type = this match {
-      case SBinding(_, body) => body.typ
-      case SExpr(expr) => expr.typ
-      case SBlock(stmts) => stmts.last.typ
+    def infer(implicit env: TEnv): (TEnv, Type, Effect) = this match {
+      case SBinding(id, body) => {
+        val envPrime = env + (id -> Scheme(Seq(), TVar("a")))
+        body.infer(envPrime) match {
+          case (t, e) => (envPrime + (id -> Scheme(Seq(), t)), t, e)
+        }
+      }
+      case SExpr(expr) => expr.infer match {
+        case (t, e) => (env, t, e)
+      }
+      case SBlock(_) => ???
     }
   }
 

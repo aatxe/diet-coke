@@ -246,7 +246,7 @@ object Syntax {
   }
 
   case object BShow extends BuiltIn {
-    override val typ = TFun(TVar("a"), TRowEmpty, TString)
+    override val typ = TFun(TVar("a"), TVar(), TString)
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq(value) => VConst(CString(value.pretty))
@@ -255,7 +255,7 @@ object Syntax {
   }
 
   case object BPrint extends BuiltIn {
-    override val typ = TFun(TString, TRowExtend("io", TUnit, TRowEmpty), TUnit)
+    override val typ = TFun(TString, TRowExtend("io", TUnit, TVar()), TUnit)
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq(VConst(CString(str))) => print(str); VUnit
@@ -265,7 +265,7 @@ object Syntax {
   }
 
   case object BPrintln extends BuiltIn {
-    override val typ = TFun(TString, TRowExtend("io", TUnit, TRowEmpty), TUnit)
+    override val typ = TFun(TString, TRowExtend("io", TUnit, TVar()), TUnit)
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq(VConst(CString(str))) => println(str); VUnit

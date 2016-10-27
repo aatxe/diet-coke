@@ -199,7 +199,10 @@ object InferenceEngine {
       val s4 = unify(s1(t1), TBool)
       val s5 = unify(s2(t2), s3(t3))
       val s6 = s5 compose s4
-      (s6, s6(t2), e2)
+      val s7 = unify(s1(e1), s2(e2))
+      val s8 = unify(s2(e2), s3(e3))
+      val s9 = s8 compose s7
+      (s6, s6(t2), s9(e3))
     }
     case EBlock(exprs) => exprs.foldLeft[(Subst, Type, Effect)]((Subst.empty, TUnit, TVar())) {
       case ((_, _, e1), expr) => infer(expr) match {

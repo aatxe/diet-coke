@@ -74,6 +74,39 @@ let res8: num = -27
 #### Program ####
 
 ```
+fn fact(x) =
+  if x < 0 then
+    error "undefined"
+  else if x == 0 then
+    1
+  else
+    x * fact(x - 1)
+```
+
+#### Session ####
+
+```
+λ :m on
+λ fn fact(x) =
+|   if x < 0 then
+|     error "undefined"
+|   else if x == 0 then
+|     1
+|   else
+|     x * fact(x - 1)
+| 
+λ :m off
+λ :t fact
+fact :: (num -> <exn | e412> num)
+λ fact(5)
+let res15: num = 120
+λ fact(10)
+let res16: num = 3628800
+```
+
+#### Program ####
+
+```
 fn trace(x) = ({ println(show(x)); x })()
 
 fn wild(x) =
@@ -125,6 +158,7 @@ let res13: num = -536856153
 ### To-Do List ###
 
 - [ ] Fix bug with typing inject and catch builtins.
+- [ ] Fix bug in parser that prevents identifiers prefixed with keywords.
 
 ### Full Citation ###
 ```

@@ -116,6 +116,9 @@ class Parser extends RegexParsers with PackratParsers {
     or ~ ("||" ~> and) ^^ { case lhs ~ rhs => EOp2(OOr, lhs, rhs) } |
     and
 
+  lazy val fix: P[Expr] =
+    ("fix" ~> id <~ "=>") ~ expr ^^ { case id ~ expr => EFix(id, expr) }
+
   lazy val anonymousFun: P[Expr] =
     id ~ ("=>" ~> expr) ^^ { case id ~ body => EFun(id, body) }
 
@@ -130,6 +133,7 @@ class Parser extends RegexParsers with PackratParsers {
 
   // TODO see about replacing this with an explicit precendence table.
   lazy val expr: P[Expr] =
+    fix           |
     anonymousFun  |
     thunk         |
     ifExpr        |

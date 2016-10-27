@@ -8,7 +8,7 @@ class Parser extends RegexParsers with PackratParsers {
   type P[A] = PackratParser[A]
 
   lazy val reserved: P[String] =
-    "fn" | "let" | "true" | "false" | "if" | "then" | "else" | "error" | builtIns
+    "fn" | "let" | "true" | "false" | "if" | "then" | "else" | "error" | "fix" | builtIns
 
   lazy val builtIns: P[String] =
     "show" | "println" | "print" | "catch" | "inject" | "random"

@@ -413,7 +413,9 @@ object Syntax {
       case SExpr(expr) => expr.infer match {
         case (t, e) => (env, t, e)
       }
-      case SBlock(_) => ???
+      case SBlock(stmts) => stmts.foldLeft[(TEnv, Type, Effect)]((env, TUnit, TUnit)) {
+        case ((envPrime, _, _), stmt) => stmt.infer(envPrime)
+      }
     }
   }
 

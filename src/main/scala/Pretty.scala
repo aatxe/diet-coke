@@ -16,7 +16,18 @@ object Pretty {
     case TFun(x, e, y) => s"(${prettyType(x)} -> ${prettyType(e)} ${prettyType(y)})"
     case TVar(tyvar) => tyvar.name
     case TRowEmpty => "<>"
-    case TRowExtend(label, lhs, rhs) => s"<$label: ${prettyType(lhs)}, ${prettyType(rhs)}>"
+    case TRowExtend(_, _, _) => prettyRow(typ)
+  }
+
+  def prettyRow(typ: Type): String = InferenceEngine.decomposeRow(typ) match {
+    case (lpairs, Some(tyvar)) => {
+      val row = lpairs.map(_._1).mkString(", ")
+      s"<$row | ${tyvar.name}>"
+    }
+    case (lpairs, None) => {
+      val row = lpairs.map(_._1).mkString(", ")
+      s"<$row>"
+    }
   }
 
   def prettyValue(value: Value): String = value match {

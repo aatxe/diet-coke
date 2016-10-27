@@ -298,7 +298,7 @@ object Syntax {
     val exnEffect = TRowExtend("exn", TUnit, effect)
     val exnExnEffect = TRowExtend("exn", TUnit, exnEffect)
     val argTyp = TVar("a")
-    override val typ = TFun(TFun(TUnit, exnEffect, argTyp), TRowEmpty, TFun(TUnit, exnExnEffect, argTyp))
+    override val typ = TFun(TFun(TUnit, exnEffect, argTyp), exnExnEffect, argTyp)
 
     override def apply(args: Seq[Value]): Value = args match {
       case Seq(thunk@VThunk(_, _)) => Try(Interpreter.evalThunk(thunk)) match {

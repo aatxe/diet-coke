@@ -127,12 +127,12 @@ object InferenceEngine {
       val s4 = unify(e1, e2)
       (s3, s3(tv), s4(e2))
     }
-    case EFix(_, expr) => {
-      val (s1, t, e) = infer(expr)
-      val tv = TVar("a")
-      val s2 = unify(TFun(tv, e, tv), t)
-      val s3 = s1 compose s2
-      (s3, s3(t), s3(e))
+    case EFix(id, expr) => {
+      val (_, t, e) = infer(expr)
+      val tv1 = TVar("a")
+      val tv2 = TVar("a")
+      val s = unify(TFun(tv1, e, tv2), t)
+      (s, s(t), s(e))
     }
     case EFun(id, body) => {
       val tv = TVar("a")
@@ -149,7 +149,49 @@ object InferenceEngine {
       val s5 = s4 compose s3
       (s5, s5(tv), s5(e3))
     }
-    case EBuiltIn(builtIn, args) => ???
+    case EBuiltIn(builtIn, args) => builtIn match {
+      // Arity 0
+      case BRandom => args match {
+        case Seq() => {
+          val tv = TVar("a")
+          val e = TVar()
+          val s = unify(builtIn.typ, TFun(TUnit, e, tv))
+          (s, s(tv), s(e))
+        }
+        case _ => throw Errors.ArityMismatch(builtIn, args.length, 0)
+      }
+
+      // Arity 1
+      case BShow | BPrint | BPrintln | BInject => args match {
+        case Seq(arg) => {
+          val (s1, t1, e1) = infer(arg)
+          val tv = TVar("a")
+          val e2 = TVar()
+          val s2 = unify(builtIn.typ, TFun(s1(t1), s1(e1), tv))
+          val s3 = unify(s2(e1), s2(e2))
+          val s4 = s3 compose s2
+          (s4, s4(tv), s4(e2))
+        }
+        case _ => throw Errors.ArityMismatch(builtIn, args.length, 1)
+      }
+
+      // Arity 2
+      case BCatch => args match {
+        case Seq(lhs, rhs) => {
+          val (s1, t1, e1) = infer(lhs)
+          val (s2, t2, e2) = infer(rhs)
+          val tv = TVar("a")
+          val e3 = TVar()
+          val s3 = unify(builtIn.typ, TFun(TFun(TUnit, s1(e1), s1(t1)), TVar(), TFun(TFun(TString, s2(e2), s2(t2)), e3, tv)))
+          val s4 = s3 compose s2 compose s1
+          val s5 = unify(s4(e1), s4(e3))
+          val s6 = unify(s4(e2), s4(e3))
+          val s7 = s6 compose s5
+          (s7, s7(tv), s6(e3))
+        }
+        case _ => throw Errors.ArityMismatch(builtIn, args.length, 2)
+      }
+    }
     case EIf(pred, tru, fls) => {
       val (s1, t1, e1) = infer(pred)
       val (s2, t2, e2) = infer(tru)

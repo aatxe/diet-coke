@@ -55,6 +55,7 @@ object Main extends App {
           if (res != Syntax.VUnit) {
             println(s"let res$resNum: ${typ.pretty} = ${res.pretty}")
             env = env + (s"res$resNum" -> res)
+            typEnv = typEnv + (s"res$resNum" -> Syntax.Scheme(Seq(), typ))
             resNum += 1
           }
         } catch {

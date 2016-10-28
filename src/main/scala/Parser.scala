@@ -7,14 +7,22 @@ import Syntax._
 class Parser extends RegexParsers with PackratParsers {
   type P[A] = PackratParser[A]
 
-  lazy val reserved: P[String] =
-    "fn" | "let" | "true" | "false" | "if" | "then" | "else" | "error" | "fix" | builtIns
+  val reserved = Set(
+    "fn", "let", "true", "false", "if", "then", "else", "error", "fix",
+    "show", "println", "print", "catch", "inject", "random"
+  )
+
+  def notReserved: PartialFunction[String, String] = {
+    case id if reserved.contains(id) == false => id
+  }
 
   lazy val builtIns: P[String] =
     "show" | "println" | "print" | "catch" | "inject" | "random"
 
-  lazy val id: P[String] =
-    guard(not(reserved)) ~> """([a-zA-Z]|[^\u0000-\uFFFF])([a-zA-Z0-9]|[^\u0000-\uFFFF])*""".r
+  lazy val idCore: P[String] =
+    """([a-zA-Z]|[^\u0000-\uFFFF])([a-zA-Z0-9]|[^\u0000-\uFFFF])*""".r ^^ (x => x)
+
+  lazy val id: P[String] = idCore ^? (notReserved, (id => s"$id is a reserved keyword."))
 
   lazy val string: P[String] =
     "\"" ~> """[^"]*""".r <~ "\""

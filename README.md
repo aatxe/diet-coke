@@ -158,7 +158,6 @@ let res13: num = -536856153
 ### To-Do List ###
 
 - [ ] Fix bug with typing inject and catch builtins.
-- [ ] Fix bug in parser that prevents identifiers prefixed with keywords.
 
 ### Full Citation ###
 ```

@@ -19,16 +19,12 @@ Diet Coke currently exists only in the form of a REPL. It's a fairly straightfor
 ```
 expr ::= id
        | n
-       | true
-       | false
+       | true | false
        | string
-       | op1 expr
-       | expr op2 expr
-       | builtIn(expr)
-       | expr(expr*)
+       | op1 expr | expr op2 expr
+       | builtIn(expr*) | expr(expr*)
        | error string
-       | fix id => expr
-       | id => expr
+       | fix id => expr | id => expr
        | if expr then expr else expr
        | { expr [; expr]* }
 

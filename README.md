@@ -64,7 +64,7 @@ fn randRangeErr(x) =
 ```
 λ fn randRangeErr(x) = if x < 0 then error "invalid input" else random() % x
 λ :t randRangeErr
-randRangeErr :: (a82 -> <ndet, exn | e107> num)
+randRangeErr :: (num -> <ndet, exn | e107> num)
 λ randRange(10)
 let res7: num = 8
 λ randRange(32)
@@ -138,7 +138,7 @@ let res9: a182 = 30
 | 
 λ :m off
 λ :t wild
-wild :: (a194 -> <ndet, io, exn | e231> num)
+wild :: (num -> <ndet, io, exn | e231> num)
 λ wild(10)
 14
 let res10: num = 14

@@ -196,11 +196,11 @@ object InferenceEngine {
       val (s1, t1, e1) = infer(pred)
       val (s2, t2, e2) = infer(tru)
       val (s3, t3, e3) = infer(fls)
-      val s4 = unify(s1(t1), TBool)
-      val s5 = unify(s2(t2), s3(t3))
+      val s4 = unify(s1(t1), TBool) compose s1
+      val s5 = unify(s4(t2), s4(t3))
       val s6 = s5 compose s4
-      val s7 = unify(s1(e1), s2(e2))
-      val s8 = unify(s2(e2), s3(e3))
+      val s7 = unify(s4(e1), s4(e2))
+      val s8 = unify(s2(e2), s4(e3))
       val s9 = s8 compose s7
       (s6, s6(t2), s9(e3))
     }

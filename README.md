@@ -32,6 +32,13 @@ expr ::= id
        | if expr then expr else expr
        | { expr [; expr]* }
 
+builtIn ::= show
+          | print
+          | println
+          | catch
+          | inject
+          | random
+
 op1 ::= ! | -
 
 op2 ::= + | - | * | / | %

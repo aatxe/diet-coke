@@ -144,10 +144,11 @@ object InferenceEngine {
       val (s2, t2, e2) = infer(arg)
       val tv = TVar("a")
       val e3 = TVar()
-      val s3 = unify(s1(t1), TFun(s2(t2), e3, tv))
-      val s4 = unify(e2, e3)
-      val s5 = s4 compose s3
-      (s5, s5(tv), s5(e3))
+      val s3 = s2 compose s1
+      val s4 = unify(s3(t1), s3(TFun(t2, e3, tv)))
+      val s5 = unify(e2, e3)
+      val s6 = s5 compose s4 compose s3
+      (s6, s6(tv), s6(e3))
     }
     case EBuiltIn(builtIn, args) => builtIn match {
       // Arity 0
@@ -205,16 +206,18 @@ object InferenceEngine {
       (s6, s6(t2), s9(e3))
     }
     case EBlock(exprs) => exprs.foldLeft[(Subst, Type, Effect)]((Subst.empty, TUnit, TVar())) {
-      case ((_, _, e1), expr) => infer(expr) match {
-        case (s1, t, e2) => {
+      case ((s1, _, e1), expr) => infer(expr) match {
+        case (s2, t, e2) => {
           val tv = TVar("a")
-          val s2 = unify(s1(t), tv)
-          val s3 = unify(e1, e2)
-          (s2, s2(tv), s3(e2))
+          val s3 = s2 compose s1
+          val s4 = unify(s3(t), tv)
+          val s5 = unify(s3(e1), s3(e2))
+          val s6 = s5 compose s4 compose s3
+          (s6, s6(tv), s6(e2))
         }
       }
     } match {
-      case (s, t, e) => (s, TFun(TUnit, e, t), TVar())
+      case (s, t, e) => (s, s(TFun(TUnit, e, t)), TVar())
     }
   }
 }

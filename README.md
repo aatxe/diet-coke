@@ -123,10 +123,10 @@ fn wild(x) =
 ```
 λ fn trace(x) = ({ println(show(x)); x })()
 λ :t trace
-trace :: (a153 -> <io | e178> a171)
+trace :: (a171 -> <io | e178> a171)
 λ trace(30)
 30
-let res9: a182 = 30
+let res9: num = 30
 λ :m on
 λ fn wild(x) =
 |   if x == 0 then

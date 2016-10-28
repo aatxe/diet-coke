@@ -14,6 +14,36 @@ order to make the most use of it, you should have `sbt` installed, and the `repl
 
 Diet Coke currently exists only in the form of a REPL. It's a fairly straightforward console, featuring only three commands (`:multiline`, `:type`, and `:quit`). You can toggle multiline input mode on and off using `:m on` and `:m off` (or the long-form `:multiline`). You can query the type of an arbitrary expression using `:type expr` or `:t expr` for short. Finally, you can quit the console using `:quit` or `:exit`. The REPL will also bind the result of every computation to a fresh result variable.
 
+## Syntax ##
+
+```
+expr ::= id
+       | n
+       | true
+       | false
+       | string
+       | op1 expr
+       | expr op2 expr
+       | builtIn(expr)
+       | expr(expr*)
+       | error string
+       | fix id => expr
+       | id => expr
+       | if expr then expr else expr
+       | { expr [; expr]* }
+
+op1 ::= ! | -
+
+op2 ::= + | - | * | / | %
+      | == | /= | > | < | >= | <= |
+      | && | || | ^
+
+stmt ::= let id = expr
+       | fn id(id*) = expr
+       | expr
+       | stmt; stmt
+```
+
 ## Example Programs ##
 
 #### Program ####

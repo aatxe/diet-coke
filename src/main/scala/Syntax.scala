@@ -382,9 +382,7 @@ object Syntax {
   sealed trait Expr {
     lazy val pretty: String = Pretty.prettyExpr(this)
 
-    def infer(implicit env: TEnv): (Type, Effect) = InferenceEngine.infer(this) match {
-      case (_, t, e) => (t, e)
-    }
+    def infer(implicit env: TEnv): (Subst, Type, Effect) = InferenceEngine.infer(this)
   }
 
   case object EUnit extends Expr
@@ -404,14 +402,20 @@ object Syntax {
 
   sealed trait Statement {
     def infer(implicit env: TEnv): (TEnv, Type, Effect) = this match {
+      case SType(_, _) => (env, TUnit, TVar())
+      case SBinding(id, body) if env.contains(id) => {
+        body.infer match {
+          case (subst, t, e) => (subst(env + (id -> Scheme(Seq(), t))), t, e)
+        }
+      }
       case SBinding(id, body) => {
         val envPrime = env + (id -> Scheme(Seq(), TVar("a")))
         body.infer(envPrime) match {
-          case (t, e) => (envPrime + (id -> Scheme(Seq(), t)), t, e)
+          case (subst, t, e) => (subst(envPrime + (id -> Scheme(Seq(), t))), t, e)
         }
       }
       case SExpr(expr) => expr.infer match {
-        case (t, e) => (env, t, e)
+        case (subst, t, e) => (subst(env), t, e)
       }
       case SBlock(stmts) => stmts.foldLeft[(TEnv, Type, Effect)]((env, TUnit, TUnit)) {
         case ((envPrime, _, _), stmt) => stmt.infer(envPrime)
@@ -419,6 +423,7 @@ object Syntax {
     }
   }
 
+  case class SType(id: String, typ: Type) extends Statement
   case class SBinding(id: String, body: Expr) extends Statement
   case class SExpr(expr: Expr) extends Statement
   case class SBlock(stmts: Seq[Statement]) extends Statement

@@ -4,8 +4,19 @@ import Errors._
 import Syntax._
 
 object Interpreter {
+  def buildEnv(stmt: Statement): Env = stmt match {
+    case SType(_, _) => Map()
+    case SBinding(_, _) | SExpr(_) => buildEnv(Seq(stmt))
+    case SBlock(stmts) => buildEnv(stmts)
+  }
+
   def buildEnv(stmts: Seq[Statement]): Env = stmts.foldRight[Env](Map()) {
     case (stmt, env) => getUpdatedEnv(stmt)(env)
+  }
+
+  def eval(stmt: Statement): Value = stmt match {
+    case SBinding(_, _) | SExpr(_) | SType(_, _) => eval(Seq(stmt))
+    case SBlock(stmts) => eval(stmts)
   }
 
   def eval(stmts: Seq[Statement]): Value = {
@@ -24,14 +35,14 @@ object Interpreter {
 
   def getUpdatedEnv(stmt: Statement)(implicit env: Env): Env = stmt match {
     case SBinding(id, body) => env + (id -> VExpr(body))
-    case SExpr(_) => env
+    case SExpr(_) | SType(_, _) => env
     case SBlock(stmts) => stmts.foldLeft(env) {
       case (acc, stmt) => getUpdatedEnv(stmt)(acc)
     }
   }
 
   def evalStatement(stmt: Statement)(implicit env: Env): Value = stmt match {
-    case SBinding(_, _) => VUnit
+    case SBinding(_, _) | SType(_, _) => VUnit
     case SExpr(expr) => evalExpr(expr)
     case SBlock(stmts) => stmts.foldLeft[(Value, Env)]((VUnit, env)) {
       case ((_, envPrime), stmt) => (evalStatement(stmt), getUpdatedEnv(stmt)(envPrime))

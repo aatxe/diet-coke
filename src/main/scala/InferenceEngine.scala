@@ -3,6 +3,29 @@ package coke
 import Syntax._
 
 object InferenceEngine {
+  def buildEnv(stmt: Statement): TEnv = stmt match {
+    case SBinding(_, _) | SExpr(_) | SType(_, _) => buildEnv(Seq(stmt))
+    case SBlock(stmts) => buildEnv(stmts)
+  }
+
+  def buildEnv(stmts: Seq[Statement]): TEnv = stmts.foldRight[TEnv](Map()) {
+    case (stmt, env) => getUpdatedEnv(stmt)(env)
+  }
+
+  def getUpdatedEnv(stmt: Statement)(implicit env: TEnv): TEnv = stmt match {
+    case SType(id, typ) if env.contains(id) => {
+      val subst = unify(typ, instantiate(env(id)))
+      val newTyp = subst(typ)
+      env + (id -> Scheme(newTyp.freeTypeVars.toSeq, newTyp))
+    }
+    case SType(id, typ) => env + (id -> Scheme(typ.freeTypeVars.toSeq, typ))
+    case SBinding(id, _) if env.contains(id) => env
+    case SBinding(id, body) => env + (id -> Scheme(Seq(), TVar("a")))
+    case SExpr(_) => env
+    case SBlock(stmts) => stmts.foldLeft(env) {
+      case (acc, stmt) => getUpdatedEnv(stmt)(acc)
+    }
+  }
 
   def freeTypeVars(scheme: Scheme): Set[TyVar] = scheme.typ.freeTypeVars diff scheme.tyvars.toSet
 

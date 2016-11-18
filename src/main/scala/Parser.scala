@@ -1,5 +1,6 @@
 package coke
 
+import scala.io.Source
 import scala.util.parsing.combinator._
 
 import Syntax._
@@ -8,7 +9,7 @@ class Parser extends RegexParsers with PackratParsers {
   type P[A] = PackratParser[A]
 
   val reserved = Set(
-    "fn", "let", "true", "false", "if", "then", "else", "error", "fix",
+    "fn", "let", "true", "false", "if", "then", "else", "error", "fix", "type",
     "show", "println", "print", "catch", "inject", "random"
   )
 
@@ -43,7 +44,8 @@ class Parser extends RegexParsers with PackratParsers {
     "()" ^^ { _ => TUnit }       |
     "num" ^^ { _ => TNum }       |
     "bool" ^^ { _ => TBool }     |
-    "string" ^^ { _ => TString }
+    "string" ^^ { _ => TString } |
+    id ^^ { TVar(_) }
 
   lazy val typFun: P[Type] =
     typAtom ~ ("->" ~> typFun) ^^ { case lhs ~ rhs => TFun(lhs, TVar(), rhs) } |
@@ -161,17 +163,24 @@ class Parser extends RegexParsers with PackratParsers {
   lazy val exprStmt: P[Statement] =
     expr ^^ { case expr => SExpr(expr) }
 
+  lazy val typAnnot: P[Statement] =
+    ("type" ~> id <~ "::") ~ typ ^^ { case id ~ typ => SType(id, typ) }
+
   lazy val stmtAtom: P[Statement] =
     binding  |
     funcDecl |
-    exprStmt
+    exprStmt |
+    typAnnot
 
   lazy val stmt: P[Statement] =
     rep1sep(stmtAtom, ";") ^^ {
-
       case List(stmt) => stmt
       case stmts => SBlock(stmts)
     }
+
+  // stmts is a special block parser specifically for parsing files.
+  lazy val stmts: P[Statement] =
+    rep(stmt) ^^ { case stmts => SBlock(stmts) }
 
   def parseString[A](str: String, parser: P[A]): A =
     parseAll(parser, str) match {
@@ -182,6 +191,12 @@ class Parser extends RegexParsers with PackratParsers {
 
 object Parser {
   private val parser = new Parser()
+
+  def parseFile(path: String): Statement = {
+    val src = Source.fromFile(path)
+    val contents = try src.mkString finally src.close()
+    parser.parseString(contents, parser.stmts)
+  }
 
   def parse(str: String): Statement =
     parser.parseString(str, parser.stmt)

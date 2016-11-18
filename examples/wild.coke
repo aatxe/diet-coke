@@ -1,0 +1,18 @@
+fn trace(x) = ({
+  println(show(x));
+  x
+})()
+
+fn wild(x) =
+  if x == 0 then
+    error "bad"
+  else if x > 0 then
+    trace(14)
+  else
+    random()
+
+fn main() = ({
+   println(show(wild(5) + wild(7)));
+   println(show(wild(-3) + wild(-3)));
+   wild(0)
+})()

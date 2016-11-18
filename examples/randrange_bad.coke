@@ -1,0 +1,10 @@
+fn randRange(x) = random() % x
+
+fn randRangeErr(x) =
+  if x < 0 then
+    error "invalid input"
+  else
+    random() % x
+
+fn main() =
+  println(show(randRangeErr(-5) + randRange(12)))

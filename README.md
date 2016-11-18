@@ -12,7 +12,7 @@ order to make the most use of it, you should have `sbt` installed, and the `repl
 
 ## Using Diet Coke ##
 
-Diet Coke currently exists only in the form of a REPL. It's a fairly straightforward console, featuring only three commands (`:multiline`, `:type`, and `:quit`). You can toggle multiline input mode on and off using `:m on` and `:m off` (or the long-form `:multiline`). You can query the type of an arbitrary expression using `:type expr` or `:t expr` for short. Finally, you can quit the console using `:quit` or `:exit`. The REPL will also bind the result of every computation to a fresh result variable.
+Diet Coke consists of both a single file interpreter and a REPL. The interpreter simply takes a path to a single file and interprets it (n.b. this requires an entrypoint named main). The REPL is a fairly straightforward console, featuring only three commands (`:multiline`, `:type`, and `:quit`). You can toggle multiline input mode on and off using `:m on` and `:m off` (or the long-form `:multiline`). You can query the type of an arbitrary expression using `:type expr` or `:t expr` for short. Finally, you can quit the console using `:quit` or `:exit`. The REPL will also bind the result of every computation to a fresh result variable. To run a single file, use `sbt "run file.coke"` and to run the REPL, use `repl.sh`.
 
 ## Syntax ##
 
@@ -47,7 +47,7 @@ stmt ::= let id = expr
        | stmt; stmt
 ```
 
-## Example Programs ##
+## Example Programs with REPL Sessions ##
 
 #### Program ####
 
@@ -191,6 +191,8 @@ let res13: num = -536856153
 ### To-Do List ###
 
 - [ ] Fix bug with typing inject and catch builtins.
+- [ ] Fix bug causing type errors to be order-dependent in multi-statement files.
+- [ ] Implement explicit effect annotations.
 
 ### Full Citation ###
 ```

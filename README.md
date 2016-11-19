@@ -41,10 +41,13 @@ op2 ::= + | - | * | / | %
       | == | /= | > | < | >= | <= |
       | && | || | ^
 
+typ ::= () | num | bool | string | id | typ -> typ
+
 stmt ::= let id = expr
        | fn id(id*) = expr
        | expr
        | stmt; stmt
+       | type id :: typ
 ```
 
 ## Example Programs with REPL Sessions ##

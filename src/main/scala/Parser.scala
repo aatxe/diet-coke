@@ -45,7 +45,8 @@ class Parser extends RegexParsers with PackratParsers {
     "num" ^^ { _ => TNum }       |
     "bool" ^^ { _ => TBool }     |
     "string" ^^ { _ => TString } |
-    id ^^ { TVar(_) }
+    id ^^ { TVar(_) }            |
+    "(" ~> typ <~ ")"
 
   lazy val typFun: P[Type] =
     typAtom ~ ("->" ~> typFun) ^^ { case lhs ~ rhs => TFun(lhs, TVar(), rhs) } |

@@ -75,7 +75,7 @@ fn randRange(x) = random() % x
 ```
 λ fn randRange(x) = random() % x
 λ :t randRange
-randRange :: (num -> <ndet | e56> num)
+randRange :: (num -> <ndet | a> num)
 λ randRange(5)
 let res5: num = -4
 λ randRange(10)
@@ -97,7 +97,7 @@ fn randRangeErr(x) =
 ```
 λ fn randRangeErr(x) = if x < 0 then error "invalid input" else random() % x
 λ :t randRangeErr
-randRangeErr :: (num -> <ndet, exn | e107> num)
+randRangeErr :: (num -> <ndet, exn | a> num)
 λ randRange(10)
 let res7: num = 8
 λ randRange(32)
@@ -130,7 +130,7 @@ fn fact(x) =
 | 
 λ :m off
 λ :t fact
-fact :: (num -> <exn | e412> num)
+fact :: (num -> <exn | a> num)
 λ fact(5)
 let res15: num = 120
 λ fact(10)
@@ -156,7 +156,7 @@ fn wild(x) =
 ```
 λ fn trace(x) = ({ println(show(x)); x })()
 λ :t trace
-trace :: (a171 -> <io | e178> a171)
+trace :: (a -> <io | b> a)
 λ trace(30)
 30
 let res9: num = 30
@@ -171,7 +171,7 @@ let res9: num = 30
 | 
 λ :m off
 λ :t wild
-wild :: (num -> <ndet, io, exn | e231> num)
+wild :: (num -> <ndet, io, exn | a> num)
 λ wild(10)
 14
 let res10: num = 14

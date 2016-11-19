@@ -3,12 +3,12 @@ package coke
 import Syntax._
 
 object InferenceEngine {
-  def buildEnv(stmt: Statement): TEnv = stmt match {
-    case SBinding(_, _) | SExpr(_) | SType(_, _) => buildEnv(Seq(stmt))
-    case SBlock(stmts) => buildEnv(stmts)
+  def buildEnv(stmt: Statement, base: TEnv = Map()): TEnv = stmt match {
+    case SBinding(_, _) | SExpr(_) | SType(_, _) => buildEnv(Seq(stmt), base)
+    case SBlock(stmts) => buildEnv(stmts, base)
   }
 
-  def buildEnv(stmts: Seq[Statement]): TEnv = stmts.foldRight[TEnv](Map()) {
+  def buildEnv(stmts: Seq[Statement], base: TEnv): TEnv = stmts.foldRight[TEnv](base) {
     case (stmt, env) => getUpdatedEnv(stmt)(env)
   }
 

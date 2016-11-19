@@ -64,8 +64,8 @@ object Main extends App {
           // Run type inference on the program.
           val (typEnvPrime, typ, _) = prog.infer
 
-          // Update the type environment.
-          typEnv = typEnvPrime
+          // Update the type environment by rebuilding a new environment from type inference result.
+          typEnv = InferenceEngine.buildEnv(prog, typEnvPrime)
 
           // Update the environment.
           env = Interpreter.getUpdatedEnv(prog)
